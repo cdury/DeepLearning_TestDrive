@@ -1,29 +1,29 @@
 ### ML
-scikit-learn # import sklearn
-statsmodels
+#-#scikit-learn # import sklearn
+#-#statsmodels
 tensorflow
 
 ### Numerics
 numpy
-scipy
-statsmodels
+#-#scipy
+#-#statsmodels
 hyperopt # conda install -c conda-forge hyperopt
-librosa # pip install librosa
-pomegranate
-pymdptoolbox # pip install pymdptoolbox
+#-#librosa # pip install librosa
+#-#pomegranate
+#-#pymdptoolbox # pip install pymdptoolbox
 
 ### Time & Data
-pandas
-pytables
-pytz
+#-#pandas
+#-#pytables
+#-#pytz
 
 ## Visualization
-plotly
+#-#plotly
 #cufflinks   # pip install cufflinks
 #plotly-orca # conda install -c plotly plotly-orca
 #bokeh
-matplotlib
-pydot
+#-#matplotlib
+#-#pydot
 #holoviews
 #graphviz
 #python-graphviz
