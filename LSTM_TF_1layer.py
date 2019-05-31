@@ -9,10 +9,10 @@ from typing import Tuple, Union
 from tensorflow import Tensor, Operation
 
 # pathes
-HOME_PATH = r"D:\DEV\lokal\fraunhofer\\"
-TB_PATH = r"D:\DEV\lokal\fraunhofer\tensorboard\\"
-DATA_PATH = r"D:\DEV\lokal\fraunhofer\data\\"  # win10
-DATASET_PATH = DATA_PATH + "UCI_HAR_Dataset/"
+HOME_PATH = os.getcwd()
+TB_PATH = os.path.join("tensorboard")
+DATA_PATH = os.path.join("data")
+DATASET_PATH = os.path.join(DATA_PATH, "UCI_HAR_Dataset")
 
 # tensorboard log
 TRAIN = "train/"
@@ -81,18 +81,18 @@ def data(colums_to_use):
     # print("We use the features", [INPUT_SIGNAL_TYPES[i] for i in colums_to_use])
 
     X_train_signals_paths = [
-        DATASET_PATH + TRAIN + "Inertial Signals/" + signal + "train.txt"
+        os.path.join(DATASET_PATH, TRAIN, "Inertial Signals", signal + "train.txt")
         for signal in INPUT_SIGNAL_TYPES
     ]
     X_test_signals_paths = [
-        DATASET_PATH + TEST + "Inertial Signals/" + signal + "test.txt"
+        os.path.join(DATASET_PATH, TEST, "Inertial Signals", signal + "test.txt")
         for signal in INPUT_SIGNAL_TYPES
     ]
     X_train = load_X(X_train_signals_paths)[:, :, colums_to_use]
     X_test = load_X(X_test_signals_paths)[:, :, colums_to_use]
 
-    y_train_path = DATASET_PATH + TRAIN + "y_train.txt"
-    y_test_path = DATASET_PATH + TEST + "y_test.txt"
+    y_train_path = os.path.join(DATASET_PATH, TRAIN, "y_train.txt")
+    y_test_path = os.path.join(DATASET_PATH, TEST, "y_test.txt")
     y_train = load_y(y_train_path)
     y_test = load_y(y_test_path)
 

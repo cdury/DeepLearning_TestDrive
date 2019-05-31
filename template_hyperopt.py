@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # Paper - https://conference.scipy.org/proceedings/scipy2013/pdfs/bergstra_hyperopt.pdf
 #         https://iopscience.iop.org/article/10.1088/1749-4699/8/1/014008/pdf
+import os
 from hyperopt import hp
 from hyperopt import fmin, tpe
 from hyperopt import Trials
@@ -15,6 +16,10 @@ import pickle
 
 # Even with hyperoptimazation, there are still some parameters
 optimization_name = "UHR_LSTM_only"
+
+HYPER_PATH = os.path.join("hyperopt")
+HYPER_FILE = optimization_name+".hyp"
+
 loadFromPickle = False  # True: continue optimization / False: new optimization
 num_trials = 10  # Number of trial-runs
 
@@ -92,7 +97,7 @@ def save_trials() -> None:
 
     :return:
     """
-    pickle.dump(trials, open("hyperopt.p", "wb"))
+    pickle.dump(trials, open(os.path.join(HYPER_PATH,HYPER_FILE), "wb"))
 
 
 def summarizeTrials() -> None:
@@ -138,7 +143,7 @@ def main() -> None:
     try:
         if loadFromPickle:
             # continue optimazation with already run trials
-            trials = pickle.load(open("hyperopt.p", "rb"))
+            trials = pickle.load(open(os.path.join(HYPER_PATH,HYPER_FILE), "rb"))
         else:
             print("Starting new trials file")
     except Exception as e:
