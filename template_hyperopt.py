@@ -16,12 +16,10 @@ import pickle
 
 # Even with hyperoptimazation, there are still some parameters
 optimization_name = "UHR_LSTM_only"
-
 HYPER_PATH = os.path.join("hyperopt")
-HYPER_FILE = optimization_name+".hyp"
-
+HYPER_FILE = optimization_name + ".hyp"
 loadFromPickle = False  # True: continue optimization / False: new optimization
-num_trials = 10  # Number of trial-runs
+num_trials = 11  # Number of trial-runs
 
 # The key in the space must match a variable name in HyperParameters
 # (has to be populated with domain knowledge)
@@ -63,7 +61,7 @@ def objective(args: Dict[str, Any]) -> Dict[str, Any]:
 
     # run with this particular hyperparameter realization
     try:
-        loss_acc, additional_dict = hyperparameters.runAndGetError()
+        loss_acc, additional_dict = hyperparameters.run_and_get_error()
         train_loss, train_accuracy, test_loss, test_accuracy = loss_acc
         # show brief result
         print("For", args)
@@ -97,10 +95,10 @@ def save_trials() -> None:
 
     :return:
     """
-    pickle.dump(trials, open(os.path.join(HYPER_PATH,HYPER_FILE), "wb"))
+    pickle.dump(trials, open(os.path.join(HYPER_PATH, HYPER_FILE), "wb"))
 
 
-def summarizeTrials() -> None:
+def summarize_trials() -> None:
     """ Prints a summary of the done trials
 
     :return:
@@ -143,7 +141,7 @@ def main() -> None:
     try:
         if loadFromPickle:
             # continue optimazation with already run trials
-            trials = pickle.load(open(os.path.join(HYPER_PATH,HYPER_FILE), "rb"))
+            trials = pickle.load(open(os.path.join(HYPER_PATH, HYPER_FILE), "rb"))
         else:
             print("Starting new trials file")
     except Exception as e:
@@ -167,7 +165,7 @@ def main() -> None:
     # end for
 
     # optimazation finished
-    summarizeTrials()
+    summarize_trials()
     print(f"{i} Trials => Best result was: {best}")
 
 
@@ -181,7 +179,7 @@ def signal_handler(signal, frame) -> None:
     # in case of premature interrruption
     print("Hyperoptimazation interrupted")
     # show and save state
-    summarizeTrials()
+    summarize_trials()
     save_trials()
     sys.exit(0)
 

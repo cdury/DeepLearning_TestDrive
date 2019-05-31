@@ -17,7 +17,7 @@ DATASET_PATH = os.path.join(DATA_PATH, "UCI_HAR_Dataset")
 # tensorboard log
 TRAIN = "train/"
 TEST = "test/"
-TB_NAME= "Verlauf_direkt"
+TB_NAME = "Verlauf_direkt"
 
 # Labels of input collumns
 INPUT_SIGNAL_TYPES = [

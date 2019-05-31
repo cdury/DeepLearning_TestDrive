@@ -15,6 +15,7 @@ class HyperParameters:
     """ HyperParamters for the neural network
 
     """
+
     def __init__(self):
         # Init
         self.tid = 0  # Trial ID when using hyperopt
@@ -37,14 +38,14 @@ class HyperParameters:
         # Display
         self.display_iter = 30000
 
-    def runAndGetError(self) -> (Tuple[float, float, float, float], Dict[str, str]):
+    def run_and_get_error(self) -> (Tuple[float, float, float, float], Dict[str, str]):
         """This function should call your tensorflow etc
         code which does the whole training procedure and returns
         the losses.  Lower is better!
 
         :return:
         """
-        os.environ["TF_CPP_MIN_LOG_LEVEL"]="2"
+        os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
         gc.collect()
         loss_acc, additional_dict = neural_net(self)
         gc.collect()
@@ -234,8 +235,8 @@ def main() -> None:
     loss_acc, additional_dict = neural_net(hyperparameters)
     train_loss, train_accuracy, test_loss, test_accuracy = loss_acc
     # Evaluate trained model
-    ## Further advanced evaluation
-    ## Plots
+    # # Further advanced evaluation
+    # # Plots
 
     return None
 
