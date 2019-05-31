@@ -1,0 +1,39 @@
+### ML
+scikit-learn # import sklearn
+statsmodels
+tensorflow
+
+### Numerics
+numpy
+scipy
+statsmodels
+hyperopt # conda install -c conda-forge hyperopt
+librosa # pip install librosa
+pomegranate
+pymdptoolbox # pip install pymdptoolbox
+
+### Time & Data
+pandas
+pytables
+pytz
+
+## Visualization
+plotly
+#cufflinks   # pip install cufflinks
+#plotly-orca # conda install -c plotly plotly-orca
+#bokeh
+matplotlib
+pydot
+#holoviews
+#graphviz
+#python-graphviz
+
+## Web
+requests
+
+### OS & coding
+#black # pip install black
+ipython
+jupyter
+#pytest
+psutil
