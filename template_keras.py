@@ -10,12 +10,12 @@ from tensorflow.contrib.keras.api.keras.models import Sequential
 import tensorflow.contrib.keras.api.keras.backend as K
 
 
-
 # Hyperopt API
 class HyperParameters:
     """ HyperParamters for the neural network
 
     """
+
     def __init__(self):
         # Init
         self.tid = 0  # Trial ID when using hyperopt
@@ -142,7 +142,6 @@ def neural_net(
     train_data, test_data = data(hyperparameter)
     x_train, y_train, f_c = train_data
     x_test, y_test, f_c_t = test_data
-
 
     # Setup model
     model, placeholder = create_model(x_train.shape, hyperparameter)
