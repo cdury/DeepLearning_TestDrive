@@ -32,7 +32,7 @@ hyperopt # conda install -c conda-forge hyperopt
 requests
 
 ### OS & coding
-#black # pip install black
+#black # conda install -c conda-forge black -OR- pip install black
 ipython
 jupyter
 #pytest
