@@ -17,6 +17,7 @@ DATASET_PATH = os.path.join(DATA_PATH, "UCI_HAR_Dataset")
 # tensorboard log
 TRAIN = "train/"
 TEST = "test/"
+TB_NAME= "Verlauf_direkt"
 
 # Labels of input collumns
 INPUT_SIGNAL_TYPES = [
@@ -377,7 +378,7 @@ def main():
             training_iters,
             display_iter,
             n_classes,
-            "Verlauf_52",
+            TB_NAME,
         )
 
         # Accuracy for test data
