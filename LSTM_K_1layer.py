@@ -1,12 +1,16 @@
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-import tensorflow as tf
+
 from sklearn import metrics
 from random import shuffle
 import os
-from typing import Tuple, Union
-from tensorflow import Tensor, Operation
+from typing import Tuple, Union, Any, Dict, List
+
+#import tensorflow.contrib.keras as keras
+#import tensorflow.contrib.keras.api.keras
+#from tensorflow import Tensor, Operation
+#from tensorflow.contrib.keras.api.keras
 
 # pathes
 HOME_PATH = os.getcwd()
@@ -134,21 +138,21 @@ def one_hot(y_, n_classes):
     y_ = y_.reshape(len(y_))
     return np.eye(n_classes)[np.array(y_, dtype=np.int32)]  # Returns FLOATS
 
-
+# ToDo: Reshaping if necessary
 def Reshaping(_X, _weights, _biases, n_input, n_steps):
     # Regardless of the number of input time series the input to the LSTM has to have  n_hidden dimensions
     # (To achive this we pass the input throug an neuron with RELU- Activation and weights
     #  _weights['hidden'], _biases['hidden'] ).
     """ Reshapes and scales _X, for scaling it uses _weights['hidden'] and _biases['hidden']"""
-    _X = tf.transpose(_X, [1, 0, 2])  # permute n_steps and batch_size
+    #c#_X = tf.transpose(_X, [1, 0, 2])  # permute n_steps and batch_size
     # Reshape to prepare input to hidden activation
-    _X = tf.reshape(_X, [-1, n_input])
+    #c#_X = tf.reshape(_X, [-1, n_input])
     # new shape: (n_steps*batch_size, n_input)
 
     # ReLU activation, thanks to Yu Zhao for adding this improvement here:
-    _X = tf.nn.relu(tf.matmul(_X, _weights["hidden"]) + _biases["hidden"])
+    #c#_X = tf.nn.relu(tf.matmul(_X, _weights["hidden"]) + _biases["hidden"])
     # Split data because rnn cell needs a list of inputs for the RNN inner loop
-    _X = tf.split(_X, n_steps, 0)
+    #c#_X = tf.split(_X, n_steps, 0)
     # new shape: n_steps * (batch_size, n_hidden)
 
     return _X
@@ -156,84 +160,89 @@ def Reshaping(_X, _weights, _biases, n_input, n_steps):
 
 def define_graph(
     n_input, n_hidden, n_classes, n_steps, learning_rate, lambda_loss_amount
-) -> (Tuple[Union[Tensor, Operation]], Tuple[Tensor]):
+) -> (Any,Any):
     # # LSTM Neural Network's internal structure
     # # #To define the network we do not only need the weights (and biases) for the input neuron
     # (which is passed to the Reshaping function), but also the weights of the output neurons.
     # We regard this weights as learnable parameter, hence they are represented as tensorflow variables
     # (initialized with  normal deistirbuted random variables).
 
+    # ToDo: LSTM Layer
     def LSTM_RNN_one_Layer(_X, _weights, _biases, n_hidden, n_input, n_steps):
         _X_reshaped = Reshaping(_X, _weights, _biases, n_input, n_steps)
 
-        lstm_cell = tf.contrib.rnn.LSTMBlockFusedCell(n_hidden, forget_bias=1.0)
-        outputs, state = lstm_cell(tf.stack(_X_reshaped), dtype=tf.float32)
-        return tf.matmul(tf.unstack(outputs)[-1], _weights["out"]) + _biases["out"]
+        lstm_cell = None #c# tf.contrib.rnn.LSTMBlockFusedCell(n_hidden, forget_bias=1.0)
+        #-# outputs, state = lstm_cell(tf.stack(_X_reshaped), dtype=tf.float32)
+        return None #-# tf.matmul(tf.unstack(outputs)[-1], _weights["out"]) + _biases["out"]
 
+    # ToDo: Weights, if necessary
     # Graph weights
-    weights_one_Layer = {
-        "hidden": tf.Variable(tf.random_normal([n_input, n_hidden])),
-        "out": tf.Variable(tf.random_normal([n_hidden, n_classes], mean=1.0)),
-    }
-    biases_one_Layer = {
-        "hidden": tf.Variable(tf.random_normal([n_hidden])),
-        "out": tf.Variable(tf.random_normal([n_classes])),
-    }
+    #x# weights_one_Layer = {
+    #x#    "hidden": tf.Variable(tf.random_normal([n_input, n_hidden])),
+    #x#    "out": tf.Variable(tf.random_normal([n_hidden, n_classes], mean=1.0)),
+    #x#}
+    #x#biases_one_Layer = {
+    #x#    "hidden": tf.Variable(tf.random_normal([n_hidden])),
+    #x#    "out": tf.Variable(tf.random_normal([n_classes])),
+    #x#}
     # # Training Setup
     # Before we start training we have to
     # - define the nodes that tensorflow should use to fill in the data set (the placeholders)
     # - conecte the input placholder with the defined networks
     # - define a loss function (where the placeholder for the input is filled in)
 
+    # ToDo: Inpput, Output if necessary
     # Graph input/output
-    x = tf.placeholder(tf.float32, [None, n_steps, n_input])
-    y = tf.placeholder(tf.float32, [None, n_classes])
-    aux_obs = tf.placeholder(tf.float32, [None, 4])
-    placeholder = (x, y, aux_obs)
+    #x# x = tf.placeholder(tf.float32, [None, n_steps, n_input])
+    #x# y = tf.placeholder(tf.float32, [None, n_classes])
+    #x# aux_obs = tf.placeholder(tf.float32, [None, 4])
+    placeholder = None, None, None #x# (x, y, aux_obs)
 
-    weights = weights_one_Layer
-    biases = biases_one_Layer
-    aux_out = 0
-    pred = LSTM_RNN_one_Layer(x, weights, biases, n_hidden, n_input, n_steps)
+    #c# weights = weights_one_Layer
+    #c#biases = biases_one_Layer
+    #c#aux_out = 0
+    #c#pred = LSTM_RNN_one_Layer(x, weights, biases, n_hidden, n_input, n_steps)
+    # ToDo: Loss function part cross entropy
     # Classification loss function
-    soft_max_cost = tf.reduce_mean(
-        tf.nn.softmax_cross_entropy_with_logits_v2(labels=y, logits=pred)
-    )
+    soft_max_cost = 0 #c# tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y, logits=pred))
 
     # We add upto two more terms to the loss function:
     # - l2 loss over the trainable weights
     # - (if needed) loss for the error in predicting the auxillary output
 
+    # ToDo: Loss function part L2 regularization
     # Loss, optimizer and evaluation
-    l2 = lambda_loss_amount * sum(
-        tf.nn.l2_loss(tf_var) for tf_var in tf.trainable_variables()
-    )  # L2 loss prevents this overkill neural network to overfit the data
+    l2 = lambda_loss_amount * 1 #c# sum(        tf.nn.l2_loss(tf_var) for tf_var in tf.trainable_variables()    )
+    # L2 loss prevents this overkill neural network to overfit the data
     # global_step = tf.Variable(0, trainable=False)
     # starter_learning_rate = learning_rate
 
-    aux_cost = tf.nn.l2_loss(aux_out - aux_obs)
-    cost = soft_max_cost + (1 / 300) * aux_cost + l2
+    # ToDo: Loss function part auxiliary output
+    #c# aux_cost = tf.nn.l2_loss(aux_out - aux_obs)
+    cost = 0 #c# soft_max_cost + (1 / 300) * aux_cost + l2
 
+    # ToDo: Give summary
     # For observing the training progress in tensorflow we track the costs and some additional statistics:
-    tf.summary.scalar("l2", l2)
-    tf.summary.scalar("aux_cost", aux_cost)
-    tf.summary.scalar("soft_max_cost", soft_max_cost)
-    tf.summary.histogram("aux_cost_hist", aux_out - aux_obs)
-    correct_pred = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
-    tf.summary.scalar("loss", cost)
-    tf.summary.scalar("acc", accuracy)
-    tf.summary.histogram("W_hidden", weights["hidden"])
+    #c#tf.summary.scalar("l2", l2)
+    #c#tf.summary.scalar("aux_cost", aux_cost)
+    #c#tf.summary.scalar("soft_max_cost", soft_max_cost)
+    #c#tf.summary.histogram("aux_cost_hist", aux_out - aux_obs)
+    #c#correct_pred = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
+    #c#accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
+    #c#tf.summary.scalar("loss", cost)
+    #c#tf.summary.scalar("acc", accuracy)
+    #c#tf.summary.histogram("W_hidden", weights["hidden"])
     # tf.summary.histogram("W_aux_out", weights["aux_out"])
-    tf.summary.histogram("W_out", weights["out"])
-    summ = tf.summary.merge_all()
+    #c#tf.summary.histogram("W_out", weights["out"])
+    summ = None #c# tf.summary.merge_all()
 
+    # ToDo: optimizer
     # As optimizer we use the Adam Optimizer
-    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(
-        cost
-    )  # Adam Optimizer
+    #c#optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(
+    #c#    cost
+    #c#)  # Adam Optimizer
 
-    model = summ, pred, optimizer, cost, accuracy
+    model = None, None, None, None, None  # summ, pred, optimizer, cost, accuracy
     return model, placeholder
 
 
@@ -258,17 +267,17 @@ def train_graph_weights(
     test_tb_path = os.path.join(TB_PATH, "test_" + tb_suffix)  # /tensorboard
     # print(tb_path, os.path.isdir(tb_path))
     # print(test_tb_path, os.path.isdir(test_tb_path))
-
+    # ToDo: Tensorboard logging
     # To keep track of training's performance
     test_losses = []
     test_accuracies = []
     train_losses = []
     train_accuracies = []
-    train_writer = tf.summary.FileWriter(tb_path, sess.graph)
-    test_writer = tf.summary.FileWriter(test_tb_path)
+    #c# train_writer = tf.summary.FileWriter(tb_path, sess.graph)
+    #c# test_writer = tf.summary.FileWriter(test_tb_path)
 
-    init = tf.global_variables_initializer()
-    sess.run(init)
+    #-# init = tf.global_variables_initializer()
+    #x# sess.run(init)
 
     # Perform Training steps with "batch_size" amount of example data at each loop
     step = 1
@@ -278,10 +287,10 @@ def train_graph_weights(
         batch_aux = extract_batch_size(f_c, step, batch_size)
 
         # Fit training using batch data
-        _, loss, acc = sess.run(
-            [optimizer, cost, accuracy],
-            feed_dict={x: batch_xs, y: batch_ys, aux_obs: batch_aux},
-        )
+        _, loss, acc = 0,0,0 #x# sess.run(
+        #c#     [optimizer, cost, accuracy],
+        #c#     feed_dict={x: batch_xs, y: batch_ys, aux_obs: batch_aux},
+        #c#  )
         train_losses.append(loss)
         train_accuracies.append(acc)
 
@@ -300,14 +309,14 @@ def train_graph_weights(
                 + ", Accuracy = {}".format(acc)
             )
 
-            s = sess.run(summ, feed_dict={x: batch_xs, y: batch_ys, aux_obs: batch_aux})
-            train_writer.add_summary(s, step)
+            #c# s = sess.run(summ, feed_dict={x: batch_xs, y: batch_ys, aux_obs: batch_aux})
+            #c# train_writer.add_summary(s, step)
             # Evaluation on the test set (no learning made here - just evaluation for diagnosis)
-            loss, acc, s = sess.run(
-                [cost, accuracy, summ],
-                feed_dict={x: X_test, y: one_hot(y_test, n_classes), aux_obs: f_c_t},
-            )
-            test_writer.add_summary(s, step)
+            #c# loss, acc, s = sess.run(
+            #c#    [cost, accuracy, summ],
+            #c#    feed_dict={x: X_test, y: one_hot(y_test, n_classes), aux_obs: f_c_t},
+            #c#)
+            #c#test_writer.add_summary(s, step)
             print(
                 "PERFORMANCE ON TEST SET: "
                 + "Batch Loss = {}".format(loss)
@@ -340,6 +349,7 @@ def main():
     f_c_t = np.concatenate((feature_0_t, feature_1_t), axis=1)
     train_data = X_train, y_train, f_c
     test_data = X_test, y_test, f_c_t
+
     # Graph
     # # Parameter
     training_data_count = len(X_train)
@@ -358,41 +368,44 @@ def main():
     model, placeholder = define_graph(
         n_input, n_hidden, n_classes, n_steps, learning_rate, lambda_loss_amount
     )
-    summ, pred, optimizer, cost, accuracy = model
-    x, y, aux_obs = placeholder
+    #c# summ, pred, optimizer, cost, accuracy = model
+    #c# x, y, aux_obs = placeholder
 
     # # Training
     # Up to now we only defined the graph of our network, now we start a tensorflow session to acutally perform
     # the optimization.
     # Launch the graph & Training
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-    with tf.Session(config=config) as sess:
-        train_losses, train_accuracies, test_losses, test_accuracies = train_graph_weights(
-            model,
-            placeholder,
-            sess,
-            train_data,
-            test_data,
-            batch_size,
-            training_iters,
-            display_iter,
-            n_classes,
-            TB_NAME,
-        )
-
-        # Accuracy for test data
-        one_hot_predictions, accuracy, final_loss = sess.run(
-            [pred, accuracy, cost],
-            feed_dict={x: X_test, y: one_hot(y_test, n_classes), aux_obs: f_c_t},
-        )
-        print(
-            "FINAL RESULT: "
-            + "Batch Loss = {}".format(final_loss)
-            + ", Accuracy = {}".format(accuracy)
-        )
-        test_losses.append(final_loss)
-        test_accuracies.append(accuracy)
+    # ToDo: Configuration
+    #c# config = tf.ConfigProto()
+    #c# config.gpu_options.allow_growth = True
+    #x# with tf.Session(config=config) as sess:
+    # ToDo: Session with training
+    sess = None
+    train_losses, train_accuracies, test_losses, test_accuracies = train_graph_weights(
+        model,
+        placeholder,
+        sess,
+        train_data,
+        test_data,
+        batch_size,
+        training_iters,
+        display_iter,
+        n_classes,
+        TB_NAME,
+    )
+    # ToDo: Final Accuracy
+    # Accuracy for test data
+    one_hot_predictions, accuracy, final_loss = 0,0,0 #x# sess.run(
+    #c#     [pred, accuracy, cost],
+    #c#     feed_dict={x: X_test, y: one_hot(y_test, n_classes), aux_obs: f_c_t},
+    #c# )
+    print(
+        "FINAL RESULT: "
+        + "Batch Loss = {}".format(final_loss)
+        + ", Accuracy = {}".format(accuracy)
+    )
+    test_losses.append(final_loss)
+    test_accuracies.append(accuracy)
 
 
 if __name__ == "__main__":
