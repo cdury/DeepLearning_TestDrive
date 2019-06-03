@@ -1,5 +1,5 @@
 ### ML
-#-#scikit-learn # import sklearn
+scikit-learn # import sklearn
 #-#statsmodels
 tensorflow-gpu
 

@@ -3,6 +3,7 @@ import sys
 import os
 
 import numpy as np
+import pandas as pd
 import sklearn
 import matplotlib
 import matplotlib.pyplot as plt
@@ -15,7 +16,7 @@ from typing import Tuple, Union, Any, Dict, List
 from sklearn import metrics
 
 # from tensorflow import Tensor, Operation
-from tensorflow.python.keras.layers import Input, Dense
+from tensorflow.python.keras.layers import Input, Dense, Activation
 from tensorflow.python.keras.models import Model, Sequential
 from tensorflow.python.keras.optimizers import Adam
 from tensorflow.python.keras.utils import plot_model
@@ -40,6 +41,10 @@ TB_NAME = "Verlauf_direkt"
 os.environ[
     "TF_CPP_MIN_LOG_LEVEL"
 ] = "2"  # 0: All Msg 1: No INFO 2: No INFO & WARNING 3: No INFO, WARNING & ERROR
+
+# Printing
+# If you would like to turn of scientific notation, the following line can be used:
+np.set_printoptions(suppress=True)
 
 # Check Versions
 with open("print_imported_versions.py") as f:
@@ -70,67 +75,18 @@ LABELS = [
 ]
 
 
-def data(colums_to_use):
-    # Load "X" (the neural network's training and testing inputs)
-    def load_X(X_signals_paths):
-        X_signals = []
+def data():
+    df = pd.read_csv(
+        "https://data.heatonresearch.com/data/t81-558/iris.csv", na_values=["NA", "?"]
+    )
 
-        for signal_type_path in X_signals_paths:
-            file = open(signal_type_path, "r")
-            # Read dataset from disk, dealing with text files' syntax
-            X_signals.append(
-                [
-                    np.array(serie, dtype=np.float32)
-                    for serie in [
-                        row.replace("  ", " ").strip().split(" ") for row in file
-                    ]
-                ]
-            )
-            file.close()
+    # Convert to numpy - Classification
+    x = df[["sepal_l", "sepal_w", "petal_l", "petal_w"]].values
+    dummies = pd.get_dummies(df["species"])  # Classification
+    species = dummies.columns
+    y = dummies.values
 
-        return np.transpose(np.array(X_signals), (1, 2, 0))
-
-    # Load "y" (the neural network's training and testing outputs)
-    def load_y(y_path):
-        file = open(y_path, "r")
-        # Read dataset from disk, dealing with text file's syntax
-        y_ = np.array(
-            [
-                elem
-                for elem in [row.replace("  ", " ").strip().split(" ") for row in file]
-            ],
-            dtype=np.int32,
-        )
-        file.close()
-
-        # Substract 1 to each output class for friendly 0-based indexing
-        return y_ - 1
-
-    # print("We use the features", [INPUT_SIGNAL_TYPES[i] for i in colums_to_use])
-
-    X_train_signals_paths = [
-        os.path.join(DATASET_PATH, TRAIN, "Inertial Signals", signal + "train.txt")
-        for signal in INPUT_SIGNAL_TYPES
-    ]
-    X_test_signals_paths = [
-        os.path.join(DATASET_PATH, TEST, "Inertial Signals", signal + "test.txt")
-        for signal in INPUT_SIGNAL_TYPES
-    ]
-    X_train = load_X(X_train_signals_paths)[:, :, colums_to_use]
-    X_test = load_X(X_test_signals_paths)[:, :, colums_to_use]
-
-    y_train_path = os.path.join(DATASET_PATH, TRAIN, "y_train.txt")
-    y_test_path = os.path.join(DATASET_PATH, TEST, "y_test.txt")
-    y_train = load_y(y_train_path)
-    y_test = load_y(y_test_path)
-
-    idx_shuffel = np.arange(X_train.shape[0])
-    shuffle(idx_shuffel)
-
-    X_train = X_train[idx_shuffel, :, :]
-    y_train = y_train[idx_shuffel]
-
-    return X_train, y_train, X_test, y_test
+    return x, y, species
 
 
 #### Batch extractor
@@ -182,11 +138,13 @@ def Reshaping(_X, _weights, _biases, n_input, n_steps):
     return _X
 
 
-def define_model(n_input, n_hidden, learning_rate, show_summary) -> Model:
+def define_model(n_input, n_hidden, n_classes, learning_rate, show_summary) -> Model:
+
     # ToDo: Layer
-    hidden_layer1 = Dense(n_hidden, activation="tanh", name="FirstLayer")
-    hidden_layer2 = Dense(n_hidden, activation="tanh", name="SecondLayer")
-    output_layer = Dense(1, activation="sigmoid", name="OutputLayer")
+
+    hidden_layer1 = Dense(n_hidden, activation="relu")  # Hidden 1
+    hidden_layer2 = Dense(n_hidden / 2, activation="relu")  # Hidden 2
+    output_layer = Dense(n_classes, activation="softmax")  # Output
 
     # ToDo: Tensor flow (Input, Output)
     # Graph input/output
@@ -226,7 +184,12 @@ def define_model(n_input, n_hidden, learning_rate, show_summary) -> Model:
 
     # ToDo: optimizer
     # As optimizer we use the Adam Optimizer
-    model.compile(Adam(lr=learning_rate), "binary_crossentropy", metrics=["accuracy"])
+    model.compile(
+        optimizer=Adam(lr=learning_rate),
+        loss="categorical_crossentropy",
+        metrics=["accuracy"],
+    )
+
     return model
 
 
@@ -322,13 +285,7 @@ def main():
 
     # Data
     # # ToDo: Loading
-    from sklearn.datasets import make_circles
-
-    X, y = make_circles(n_samples=1000, factor=0.6, noise=0.1, random_state=42)
-    import matplotlib.pyplot as plt
-
-    pl = plot_data(plt, X, y)
-    pl.show()
+    X, y, species = data()
 
     X_train, y_train = X, y
     X_test, y_test = [], []
@@ -353,12 +310,12 @@ def main():
     # Model
     # # ToDo: Parameter
     # # # Dimensions
-    training_data_count = len(X_train)
+    training_data_count = X_train.shape[1]
     # n_steps = len(X_train[0])  # 128 timesteps per series
-    n_input = len(X_train[0])  # 2 input parameters
+    n_input = X_train.shape[1]  # 2 input parameters
     # # # Model
-    n_hidden = 4  # Num of features in the first hidden layer
-    n_classes = 6  # Total classes
+    n_hidden = 50  # Num of features in the first hidden layer
+    n_classes = y_train.shape[1]  # Total classes
     # # # Optimizer
     learning_rate = 0.05
     # # # Loss function
@@ -369,7 +326,10 @@ def main():
     batch_size = 3000
     # # # Informational
     display_iter = 30000  # To show test set accuracy during training
-    verbosity = 1
+    # verbose=0 - No progress output (use with Juputer if you do not want output)
+    # verbose=1 - Display progress bar, does not work well with Jupyter
+    # verbose=2 - Summary progress output (use with Jupyter if you want to know the loss at each epoch)
+    verbosity = 2
     show_summary = True
     show_graphs = True
     MODEL_NAME = "One_Input"
@@ -378,7 +338,11 @@ def main():
     # # ToDo: Defining
     # # # Structure
     # define_graph(n_input, n_hidden, n_classes, n_steps, learning_rate, lambda_loss_amount)
-    model = define_model(n_input, n_hidden, learning_rate, show_summary)
+    model = define_model(n_input, n_hidden, n_classes, learning_rate, show_summary)
+
+    # model.compile(loss="categorical_crossentropy", optimizer="adam")
+
+    # model.fit(X, y, verbose=2, epochs=100)
 
     if show_graphs:
         plot_model(
@@ -424,24 +388,37 @@ def main():
     # )
 
     # ToDo: Final Accuracy
+    # # Evaluation
     # Accuracy for test data
     one_hot_predictions, accuracy, final_loss = 0, 0, 0
     # sess.run(
     #     [pred, accuracy, cost],
     #     feed_dict={x: X_test, y: one_hot(y_test, n_classes), aux_obs: f_c_t},
     # )
-    eval_result = model.evaluate(X_test, y_test)
-    final_loss = eval_result[0]
-    accuracy = eval_result[1]
-    print(
-        "FINAL RESULT: "
-        + "Batch Loss = {}".format(final_loss)
-        + ", Accuracy = {}".format(accuracy)
+    evaluations = []
+    model_evaluation = model.evaluate(X_test, y_test)
+    model_evaluation = (
+        model_evaluation if isinstance(model_evaluation, list) else [model_evaluation]
     )
+    for name, value in zip(model.metrics_names, model_evaluation):
+        evaluations.append(f"{name} = {value}")
+    print("FINAL RESULT: " + ", ".join(evaluations))
+
+    # # Prediciton
+    prediction_test = model.predict(X_test)
+    print(f"Shape: {prediction_test.shape}")
     # test_losses.append(final_loss)
     # test_accuracies.append(accuracy)
-    if show_graphs:
-        plot_decision_boundary(model, X, y).show()
+    predict_classes = np.argmax(prediction_test, axis=1)
+    expected_classes = np.argmax(y_test, axis=1)
+    print(f"Predictions: {predict_classes}")
+    print(f"Expected: {expected_classes}")
+
+    from sklearn.metrics import accuracy_score
+    # Accuracy might be a more easily understood error metric.  It is essentially a test score.  For all of the iris predictions,
+    # what percent were correct?  The downside is it does not consider how confident the neural network was in each prediction.
+    correct = accuracy_score(expected_classes, predict_classes)
+    print(f"Accuracy: {correct}")
 
 
 if __name__ == "__main__":
