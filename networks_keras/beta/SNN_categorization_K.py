@@ -1,29 +1,19 @@
 # Import whole packages
-import sys
 import os
 
 import numpy as np
 import pandas as pd
-import sklearn
-import matplotlib
-import matplotlib.pyplot as plt
-import tensorflow as tf
-from tensorflow.python import keras
 
 # Import Classes and Functions
-from random import shuffle
-from typing import Tuple, Union, Any, Dict, List
-from sklearn import metrics
 
 # from tensorflow import Tensor, Operation
-from tensorflow.python.keras.layers import Input, Dense, Activation
-from tensorflow.python.keras.models import Model, Sequential
+from tensorflow.python.keras.layers import Input, Dense
+from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.optimizers import Adam
 from tensorflow.python.keras.utils import plot_model
 from tensorflow.python.keras.callbacks import EarlyStopping
 
 # Helper functions
-from helper_graphical import plot_data, plot_decision_boundary
 
 # pathes
 HOME_PATH = os.getcwd()

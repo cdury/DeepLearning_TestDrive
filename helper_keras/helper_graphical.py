@@ -48,3 +48,46 @@ def plot_decision_boundary(model, data, label) -> plt:
     plot_data(plt, data, label)
 
     return plt
+
+def plot_roc(pred,y):
+    from sklearn.metrics import roc_curve, auc
+    fpr, tpr, _ = roc_curve(y, pred)
+    roc_auc = auc(fpr, tpr)
+
+    plt.figure()
+    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic (ROC)')
+    plt.legend(loc="lower right")
+
+    return plt
+
+import matplotlib.pyplot as plt
+def plot_confusion_matrix(cm, names, title='Confusion matrix', cmap=plt.cm.Blues):
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(names))
+    plt.xticks(tick_marks, names, rotation=45)
+    plt.yticks(tick_marks, names)
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
+    return plt
+
+import pandas as pd
+def plot_regression_chart(pred, y, sort=True):
+    t = pd.DataFrame({'pred': pred.flatten(), 'y': y.flatten()})
+    if sort:
+        t.sort_values(by=['y'], inplace=True)
+    plt.plot(t['y'].tolist(), label='expected')
+    plt.plot(t['pred'].tolist(), label='prediction')
+    plt.ylabel('output')
+    plt.legend()
+    return plt
+

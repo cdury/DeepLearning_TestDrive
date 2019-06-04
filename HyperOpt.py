@@ -1,13 +1,24 @@
 #!/usr/bin/python3
 # Paper - https://conference.scipy.org/proceedings/scipy2013/pdfs/bergstra_hyperopt.pdf
 #         https://iopscience.iop.org/article/10.1088/1749-4699/8/1/014008/pdf
+
+# API   - Needs to import:
+#           Object hyperparameters with method:
+#               loss_acc, add_dict = self.run_and_get_error()
+#         Members get filled (if they don't exists, they will be created):
+#               self.parent_name :   filled with content of <optimization_name>
+#               self.tid         :   filled with <trial id>
+#               self.tb_suffix   :   filled <self.parent_name>_tid_<self.tid>
+#                                       for use with tensorboard
+#               self.(keys of <space>): filled with realized values of <space[key]>
+from TF_Categorical import hyperparameters
+
 import os
 from hyperopt import hp
 from hyperopt import fmin, tpe
 from hyperopt import Trials
 from hyperopt import STATUS_OK, STATUS_FAIL
 from functools import partial
-from template_tf import hyperparameters  # template_keras.py in the same folder
 import numpy as np
 import signal
 from typing import Dict, Any
