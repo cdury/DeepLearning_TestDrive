@@ -11,7 +11,7 @@
 #         NeuralNetwork Framework:
 #           Tensorflow 1.13
 __version__="1.0"
-from networks_tf import LSTM_TF_1layer as NeuralNetwork
+from networks_tf import LSTM_TF_1Layer as NeuralNetwork
 from helper_nn import helper_encoding as encoding
 
 import os
