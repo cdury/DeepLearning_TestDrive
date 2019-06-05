@@ -8,6 +8,21 @@ from typing import Union, List
 # pathes
 HOME_PATH = os.getcwd()
 DATA_PATH = os.path.join("data")
+#########################################################################################
+#                                                                                       #
+#                                    MNIST Dataset                                      #
+# from helper_nn.helper_load_data import mnist_data as data                             #
+# from helper_nn.helper_load_data import DATASET_PATH                                   #
+# #######################################################################################
+DATASET_PATH = os.path.join(DATA_PATH, "MNIST")
+def mnist_data():
+    from tensorflow.examples.tutorials.mnist import input_data
+
+    mnist = input_data.read_data_sets(DATASET_PATH, one_hot=True)
+    X_train, y_train = mnist.train.next_batch(mnist.train.num_examples)
+    X_test, y_test = mnist.test.next_batch(mnist.test.num_examples)
+    return X_train, y_train, X_test, y_test, mnist
+
 
 #########################################################################################
 #                                                                                       #

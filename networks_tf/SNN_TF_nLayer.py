@@ -2,31 +2,21 @@ import os, sys
 import time
 
 import tensorflow as tf
+from helper_nn.helper_load_data import mnist_data as data
 
 # Logging
-os.environ[
-    "TF_CPP_MIN_LOG_LEVEL"
-] = "3"  # 0: All Msg 1: No INFO 2: No INFO & WARNING 3: No INFO, WARNING & ERROR
+# 0: All Msg 1: No INFO 2: No INFO & WARNING 3: No INFO, WARNING & ERROR
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 # pathes
 HOME_PATH = os.getcwd()
 print(HOME_PATH)
 TB_PATH = os.path.join(HOME_PATH, "tensorboard")
 DATA_PATH = os.path.join(HOME_PATH, "data")
-DATASET_PATH = os.path.join(DATA_PATH, "MNIST")
 TRAIN_DATA = "train/"
 TEST_DATA = "test/"
 # tensorboard log
 TB_NAME = os.path.splitext(os.path.basename(__file__))[0]
-
-
-def data():
-    from tensorflow.examples.tutorials.mnist import input_data
-
-    mnist = input_data.read_data_sets(DATASET_PATH, one_hot=True)
-    X_train, y_train = mnist.train.next_batch(mnist.train.num_examples)
-    X_test, y_test = mnist.test.next_batch(mnist.test.num_examples)
-    return X_train, y_train, X_test, y_test, mnist
 
 
 def define_graph(n_input, n_hidden_1, n_hidden_2, n_classes, learning_rate):

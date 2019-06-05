@@ -3,3 +3,4 @@ data/
 hyperopt/
 tensorboard/
 *.png
+models/

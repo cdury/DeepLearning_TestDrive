@@ -2,39 +2,34 @@ import os, sys
 import time
 
 import tensorflow as tf
+from tensorflow.contrib.keras.api.keras.layers import Input, Dense
+from tensorflow.contrib.keras.api.keras.models import Model
+from tensorflow.contrib.keras.api.keras.callbacks import (
+    TensorBoard,
+    ModelCheckpoint,
+    EarlyStopping,
+)
+from helper_nn.helper_load_data import mnist_data as data
 
 # Logging
-os.environ[
-    "TF_CPP_MIN_LOG_LEVEL"
-] = "3"  # 0: All Msg 1: No INFO 2: No INFO & WARNING 3: No INFO, WARNING & ERROR
+# 0: All Msg 1: No INFO 2: No INFO & WARNING 3: No INFO, WARNING & ERROR
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 # pathes
 HOME_PATH = os.getcwd()
 print(HOME_PATH)
 TB_PATH = os.path.join(HOME_PATH, "tensorboard")
+MODEL_PATH = os.path.join(HOME_PATH, "models")
 DATA_PATH = os.path.join(HOME_PATH, "data")
-DATASET_PATH = os.path.join(DATA_PATH, "MNIST")
 TRAIN_DATA = "train/"
 TEST_DATA = "test/"
 # tensorboard log
 TB_NAME = os.path.splitext(os.path.basename(__file__))[0]
 
 
-def data():
-    from tensorflow.examples.tutorials.mnist import input_data
-
-    mnist = input_data.read_data_sets(DATASET_PATH, one_hot=True)
-    X_train, y_train = mnist.train.next_batch(mnist.train.num_examples)
-    X_test, y_test = mnist.test.next_batch(mnist.test.num_examples)
-    return X_train, y_train, X_test, y_test, mnist
-
-
 def define_model(n_input, n_hidden_1, n_hidden_2, n_classes, learning_rate):
-    from tensorflow.contrib.keras.api.keras.layers import Dense
-    from tensorflow.contrib.keras.api.keras.optimizers import Adam, Optimizer
-
     # Start defining the input tensor:
-    inpTensor = tf.keras.Input((n_input,))
+    input = Input((n_input,))
 
     # create the layers and pass them the input tensor to get the output tensor:
     layer_1 = Dense(
@@ -42,7 +37,7 @@ def define_model(n_input, n_hidden_1, n_hidden_2, n_classes, learning_rate):
         activation="relu",
         # kernel_regularizer=regularizers.l2(0.0002),
         # kernel_initializer="he_normal",
-    )(inpTensor)
+    )(input)
 
     layer_2 = Dense(
         units=n_hidden_2,
@@ -58,7 +53,7 @@ def define_model(n_input, n_hidden_1, n_hidden_2, n_classes, learning_rate):
     )(layer_2)
 
     # define the model's start and end points
-    model = tf.keras.Model(inputs=inpTensor, outputs=out_layer)
+    model = Model(inputs=input, outputs=out_layer)
 
     loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits_v2(
         logits=y_pred, labels=y_true
@@ -77,8 +72,44 @@ def define_model(n_input, n_hidden_1, n_hidden_2, n_classes, learning_rate):
 
 
 def train_model(model, train_data, test_data, batch_size, training_epochs):
+    # Data
     X_train, y_train = train_data
     X_test, y_test = test_data
+
+    # Callbacks
+    # for Tensorboard evaluation
+    tensorboard = TensorBoard(
+        log_dir=os.path.join(TB_PATH, TB_NAME),
+        update_freq="epoch",
+        write_graph=True,
+        write_images=True,
+        histogram_freq=0,
+        write_grads=False,
+    )
+    # for saving network with weights
+    checkpoint = ModelCheckpoint(
+        filepath=os.path.join(
+            MODEL_PATH, TB_NAME, "weights.{epoch:03d}-{val_loss:.2f}.hdf5"
+        ),
+        monitor="val_loss",  # monitor="val_acc",
+        save_best_only=True,
+        mode="min",  # mode="max",
+        verbose=1,
+        period=1,
+    )
+    if not os.path.isdir(os.path.join(MODEL_PATH, TB_NAME)):
+        os.mkdir(os.path.join(MODEL_PATH, TB_NAME))
+    # for early termination
+    earlyterm = EarlyStopping(
+        monitor="val_loss",
+        mode="min",
+        patience=10,
+        restore_best_weights=True,
+        verbose=1,
+    )
+    callbacks = [tensorboard, checkpoint, earlyterm]
+
+    # Training
     history = model.fit(
         X_train,
         y_train,
@@ -86,6 +117,7 @@ def train_model(model, train_data, test_data, batch_size, training_epochs):
         batch_size=batch_size,
         epochs=training_epochs,
         verbose=2,
+        callbacks=callbacks,
     )
 
     print("Training Finished!")
