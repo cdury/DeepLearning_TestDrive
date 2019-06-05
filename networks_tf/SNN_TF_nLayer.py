@@ -1,10 +1,16 @@
 import os, sys
-
+import time
 
 import tensorflow as tf
 
+# Logging
+os.environ[
+    "TF_CPP_MIN_LOG_LEVEL"
+] = "3"  # 0: All Msg 1: No INFO 2: No INFO & WARNING 3: No INFO, WARNING & ERROR
+
 # pathes
 HOME_PATH = os.getcwd()
+print(HOME_PATH)
 TB_PATH = os.path.join(HOME_PATH, "tensorboard")
 DATA_PATH = os.path.join(HOME_PATH, "data")
 DATASET_PATH = os.path.join(DATA_PATH, "MNIST")
@@ -90,7 +96,7 @@ def train_graph_weights(
         # Display logs per epoch step
         if epoch % display_step == 0:
             print("Epoch:", "%04d" % (epoch + 1), "cost=", "{:.9f}".format(avg_cost))
-    print("Optimization Finished!")
+    print("Training Finished!")
 
 
 def main():
@@ -116,12 +122,16 @@ def main():
     n_input = 784  # MNIST data input (img shape: 28*28)
     n_classes = 10  # MNIST total classes (0-9 digits)
 
+    print("Measure Model SetUp")
+    start_process_time = time.process_time()
+    start_perf_time = time.perf_counter()
     model, placeholder = define_graph(
         n_input, n_hidden_1, n_hidden_2, n_classes, learning_rate
     )
     pred, optimizer, cost = model
     x, y = placeholder
-
+    print(f"{time.process_time()-start_process_time}s with time.process_time()")
+    print(f"{time.perf_counter()-start_perf_time}s with time.perf_counter()")
     # # Training
     # Up to now we only defined the graph of our network, now we start a tensorflow session to acutally perform
     # the optimization.
@@ -129,10 +139,14 @@ def main():
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     with tf.Session(config=config) as sess:
+        print("Measure Model Training")
+        start_process_time = time.process_time()
+        start_perf_time = time.perf_counter()
         train_graph_weights(
             model, placeholder, sess, mnist, batch_size, training_epochs, display_step
         )
-
+        print(f"{time.process_time() - start_process_time}s with time.process_time()")
+        print(f"{time.perf_counter() - start_perf_time}s with time.perf_counter()")
         # Test model
         correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
         # Calculate accuracy
