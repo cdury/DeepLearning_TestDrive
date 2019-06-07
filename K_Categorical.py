@@ -26,9 +26,13 @@ import tensorflow.contrib.keras.api.keras.backend as K
 
 from helper_nn.helper_graphical import category_evaluation
 
-from networks_keras.SNN_K_nLayer_MNIST import SNNLayerN as NeuralNetwork
-from networks_keras.SNN_K_nLayer_MNIST import HyperParameters
-from networks_keras.SNN_K_nLayer_MNIST import model_name
+# from networks_keras.SNN_K_nLayer_MNIST import SNNLayerN as NeuralNetwork
+# from networks_keras.SNN_K_nLayer_MNIST import HyperParameters
+# from networks_keras.SNN_K_nLayer_MNIST import model_name
+
+from networks_keras.SNN_K_nLayer_BOSTON import SNNLayerN as NeuralNetwork
+from networks_keras.SNN_K_nLayer_BOSTON import HyperParameters
+from networks_keras.SNN_K_nLayer_BOSTON import model_name
 
 
 ##############################################################################################

@@ -5,7 +5,7 @@ tensorflow-gpu
 
 ### Numerics
 numpy
-#-#scipy
+scipy
 #-#statsmodels
 hyperopt # conda install -c conda-forge hyperopt
 #-#librosa # pip install librosa

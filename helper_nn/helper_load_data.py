@@ -16,14 +16,70 @@ DATA_PATH = os.path.join("data")
 # from helper_nn.helper_load_data import MNIST_LABELS as LABELS                         #
 # #######################################################################################
 MNIST_DATASET_PATH = os.path.join(DATA_PATH, "MNIST")
-MNIST_LABELS = ["0","1","2","3","4","5","6","7","8","9"]
+MNIST_LABELS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+MNIST_DATASET = None
+
 def mnist_data():
     from tensorflow.examples.tutorials.mnist import input_data
-
+    global MNIST_DATASET
     mnist = input_data.read_data_sets(MNIST_DATASET_PATH, one_hot=True)
     X_train, y_train = mnist.train.next_batch(mnist.train.num_examples)
     X_test, y_test = mnist.test.next_batch(mnist.test.num_examples)
-    return X_train, y_train, X_test, y_test, mnist
+    MNIST_DATASET = mnist
+    return X_train, y_train, X_test, y_test
+
+#########################################################################################
+#                                                                                       #
+#                           Boston Housing Dataset                                      #
+# from helper_nn.helper_load_data import boston_housing_data as data                    #
+# from helper_nn.helper_load_data import BOSTON_DATASET_PATH as DATASET_PATH            #
+# from helper_nn.helper_load_data import BOSTON_LABELS as LABELS                        #
+# #######################################################################################
+from sklearn.model_selection import train_test_split
+from scipy.stats import zscore
+
+BOSTON_DATASET_PATH = os.path.join(DATA_PATH, "BostonHousing")
+BOSTON_LABELS = ["a", "b", "c", "d", "e", "f", "g"]
+
+
+def boston_housing_data():
+    # Read the data set
+    df = pd.read_csv(
+        "https://data.heatonresearch.com/data/t81-558/jh-simple-dataset.csv",
+        na_values=["NA", "?"],
+    )
+
+    # Generate dummies for job
+    df = pd.concat([df, pd.get_dummies(df["job"], prefix="job")], axis=1)
+    df.drop("job", axis=1, inplace=True)
+
+    # Generate dummies for area
+    df = pd.concat([df, pd.get_dummies(df["area"], prefix="area")], axis=1)
+    df.drop("area", axis=1, inplace=True)
+
+    # Missing values for income
+    med = df["income"].median()
+    df["income"] = df["income"].fillna(med)
+
+    # Standardize ranges
+    df["income"] = zscore(df["income"])
+    df["aspect"] = zscore(df["aspect"])
+    df["save_rate"] = zscore(df["save_rate"])
+    df["age"] = zscore(df["age"])
+    df["subscriptions"] = zscore(df["subscriptions"])
+
+    # Convert to numpy - Classification
+    x_columns = df.columns.drop("product").drop("id")
+    x = df[x_columns].values
+    dummies = pd.get_dummies(df["product"])  # Classification
+    products = dummies.columns
+    y = dummies.values
+
+    # Split into train/test
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, test_size=0.25, random_state=42)
+
+    return x_train, y_train, x_test,  y_test
 
 
 #########################################################################################
@@ -108,11 +164,11 @@ def uci_har_dataset_data(
 
     X_train_signals_paths = [
         os.path.join(DATASET_PATH, TRAIN_DATA, "Inertial Signals", signal + "train.txt")
-        for signal in INPUT_SIGNAL_TYPES
+        for signal in UCI_HAR_INPUT_SIGNAL_TYPES
     ]
     X_test_signals_paths = [
         os.path.join(DATASET_PATH, TEST_DATA, "Inertial Signals", signal + "test.txt")
-        for signal in INPUT_SIGNAL_TYPES
+        for signal in UCI_HAR_INPUT_SIGNAL_TYPES
     ]
     X_train = load_X(X_train_signals_paths)[:, :, colums_to_use]
     X_test = load_X(X_test_signals_paths)[:, :, colums_to_use]
