@@ -12,13 +12,15 @@ DATA_PATH = os.path.join("data")
 #                                                                                       #
 #                                    MNIST Dataset                                      #
 # from helper_nn.helper_load_data import mnist_data as data                             #
-# from helper_nn.helper_load_data import DATASET_PATH                                   #
+# from helper_nn.helper_load_data import MNIST_DATASET_PATH as DATASET_PATH             #
+# from helper_nn.helper_load_data import MNIST_LABELS as LABELS                         #
 # #######################################################################################
-DATASET_PATH = os.path.join(DATA_PATH, "MNIST")
+MNIST_DATASET_PATH = os.path.join(DATA_PATH, "MNIST")
+MNIST_LABELS = ["0","1","2","3","4","5","6","7","8","9"]
 def mnist_data():
     from tensorflow.examples.tutorials.mnist import input_data
 
-    mnist = input_data.read_data_sets(DATASET_PATH, one_hot=True)
+    mnist = input_data.read_data_sets(MNIST_DATASET_PATH, one_hot=True)
     X_train, y_train = mnist.train.next_batch(mnist.train.num_examples)
     X_test, y_test = mnist.test.next_batch(mnist.test.num_examples)
     return X_train, y_train, X_test, y_test, mnist
@@ -28,10 +30,11 @@ def mnist_data():
 #                                                                                       #
 #                                    UCI HAR Dataset                                    #
 # from helper_nn.helper_load_data import uci_har_dataset_data as data                   #
-# from helper_nn.helper_load_data import INPUT_SIGNAL_TYPES,LABELS                      #
+# from helper_nn.helper_load_data import UCI_HAR_INPUT_SIGNAL_TYPESas INPUT_SIGNAL_TYPES#
+# from helper_nn.helper_load_data import UCI_HAR_LABELS as LABELS                       #
 # #######################################################################################
 # Labels of input columns
-INPUT_SIGNAL_TYPES = [
+UCI_HAR_INPUT_SIGNAL_TYPES = [
     "body_acc_x_",
     "body_acc_y_",
     "body_acc_z_",
@@ -44,7 +47,7 @@ INPUT_SIGNAL_TYPES = [
 ]
 
 # Output classes to learn how to classify
-LABELS = [
+UCI_HAR_LABELS = [
     "WALKING",
     "WALKING_UPSTAIRS",
     "WALKING_DOWNSTAIRS",

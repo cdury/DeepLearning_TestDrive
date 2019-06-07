@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+
 #   plot the data on a figure
 def plot_data(pl, data, label):
     """Plots the data according to the labels

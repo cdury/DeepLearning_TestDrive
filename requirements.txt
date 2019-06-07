@@ -13,7 +13,7 @@ hyperopt # conda install -c conda-forge hyperopt
 #-#pymdptoolbox # pip install pymdptoolbox
 
 ### Time & Data
-#-#pandas
+pandas
 #-#pytables
 #-#pytz
 

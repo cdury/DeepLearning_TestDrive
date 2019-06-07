@@ -2,18 +2,20 @@
 # Paper - https://conference.scipy.org/proceedings/scipy2013/pdfs/bergstra_hyperopt.pdf
 #         https://iopscience.iop.org/article/10.1088/1749-4699/8/1/014008/pdf
 
-# API   - Needs to import:
-#           Object hyperparameters with method:
-#               loss_acc, add_dict = self.run_and_get_error()
+# API   - Needs to import object "hyperparameters":
 #         Members get filled (if they don't exists, they will be created):
 #               self.parent_name :   filled with content of <optimization_name>
 #               self.tid         :   filled with <trial id>
 #               self.tb_suffix   :   filled <self.parent_name>_tid_<self.tid>
 #                                       for use with tensorboard
 #               self.(keys of <space>): filled with realized values of <space[key]>
-from TF_Categorical import hyperparameters
+#
+#       - Needs to import function "run_and_get_error":
+#               loss_acc, add_dict = run_and_get_error(hyperparameters)
+from K_Categorical import run_and_get_error, HyperParameters
 
 import os
+import time
 from hyperopt import hp
 from hyperopt import fmin, tpe
 from hyperopt import Trials
@@ -26,11 +28,13 @@ import sys
 import pickle
 
 # Even with hyperoptimazation, there are still some parameters
-optimization_name = "UHR_LSTM_only"
+TIMESTAMP = time.strftime("%y%m%d%H%M", time.gmtime())
+optimization_name = "MNIST_SNN"
 HYPER_PATH = os.path.join("hyperopt")
-HYPER_FILE = optimization_name + ".hyp"
+HYPER_BASE = optimization_name + "_" + TIMESTAMP
+HYPER_FILE = HYPER_BASE + "_hypopt" + ".hdf5"
 loadFromPickle = False  # True: continue optimization / False: new optimization
-num_trials = 11  # Number of trial-runs
+num_trials = 10  # Number of trial-runs
 
 # The key in the space must match a variable name in HyperParameters
 # (has to be populated with domain knowledge)
@@ -40,7 +44,8 @@ build_space = {}
 # {"size_of_hidden_layer": hp.uniform("size_of_hidden_layer", -2, 2)}
 data_space = {}
 learning_space = {
-    "learning_rate": hp.qloguniform("learning_rate", np.log(0.0001), np.log(1), 0.0001)
+    "learning_rate": hp.qloguniform("learning_rate", np.log(0.0001), np.log(1), 0.0001),
+    "batch_size": hp.quniform("batch_size", 10, 10000, 1),
 }
 
 space = {**init_space, **build_space, **data_space, **learning_space}
@@ -55,9 +60,13 @@ def objective(args: Dict[str, Any]) -> Dict[str, Any]:
     :param args: A realization of the parameter space "space"
     :return:     Results with this particular sets of parameter
     """
+    # Instantiate hyperparameters
+    hyperparameters = HyperParameters(
+        model_name=f"{optimization_name}_{trials.tids[-1]:04}", loglevel=3
+    )
     # Amend hyperparameters
     # Optimazation Name
-    hyperparameters.parent_name = optimization_name
+    hyperparameters.parent_name = HYPER_BASE
     # Trial ID
     hyperparameters.tid = trials.tids[-1]
     hyperparameters.tb_suffix = (
@@ -72,7 +81,9 @@ def objective(args: Dict[str, Any]) -> Dict[str, Any]:
 
     # run with this particular hyperparameter realization
     try:
-        loss_acc, additional_dict = hyperparameters.run_and_get_error()
+        loss_acc, additional_dict = run_and_get_error(
+            hyperparameters, return_model=False
+        )
         train_loss, train_accuracy, test_loss, test_accuracy = loss_acc
         # show brief result
         print("For", args)
@@ -177,7 +188,7 @@ def main() -> None:
 
     # optimazation finished
     summarize_trials()
-    print(f"{i} Trials => Best result was: {best}")
+    print(f"{i+1} Trials => Best result was: {best}")
 
 
 def signal_handler(signal, frame) -> None:
