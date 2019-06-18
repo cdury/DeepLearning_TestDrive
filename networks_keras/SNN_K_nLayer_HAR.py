@@ -1,195 +1,306 @@
+# general imports
 import os, sys
 import time
-
+import numpy as np
+import pandas as pd
 import tensorflow as tf
+
+# typing imports
+from typing import Tuple, List, Any, Union, Optional
+from numpy import ndarray
+from pandas import DataFrame, Series
+
+# keras imports
 from tensorflow.contrib.keras.api.keras.layers import Input, Dense
-from tensorflow.contrib.keras.api.keras import regularizers
 from tensorflow.contrib.keras.api.keras.models import Model
+from tensorflow.contrib.keras.api.keras.regularizers import l2
+from tensorflow.contrib.keras.api.keras.optimizers import Adam
 from tensorflow.contrib.keras.api.keras.callbacks import (
     TensorBoard,
     ModelCheckpoint,
     EarlyStopping,
 )
-# from helper_nn.helper_load_data import mnist_data as data
+import tensorflow.contrib.keras.api.keras.backend as keras_backend
+
+model_name = "SNN_3_Layer_HAR"
+
+# helper imports
+from helper_nn.helper_encoding import one_hot
+
+##############################################################################################
+# Parameters
+##############################################################################################
+# Data
 from helper_nn.helper_load_data import uci_har_dataset_data as data
 from helper_nn.helper_load_data import UCI_HAR_INPUT_SIGNAL_TYPES as INPUT_SIGNAL_TYPES
 from helper_nn.helper_load_data import UCI_HAR_LABELS as LABELS
 
-# Logging
-# 0: All Msg 1: No INFO 2: No INFO & WARNING 3: No INFO, WARNING & ERROR
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
-# pathes
-HOME_PATH = os.getcwd()
-print(HOME_PATH)
-TB_PATH = os.path.join(HOME_PATH, "tensorboard")
-MODEL_PATH = os.path.join(HOME_PATH, "models")
-DATA_PATH = os.path.join(HOME_PATH, "data")
-TRAIN_DATA = "train/"
-TEST_DATA = "test/"
-# tensorboard log
-TB_NAME = os.path.splitext(os.path.basename(__file__))[0]
+# Network
+from networks_keras.Base_Supervised_Categorical import BaseParameters, BaseNN, timing
 
 
-def define_model(n_input, n_hidden_1, n_hidden_2, n_hidden_3, n_classes, learning_rate, lambda_loss):
-    # Start defining the input tensor:
-    input = Input((n_input,))
+class HyperParameters(BaseParameters):
+    """ HyperParamters for the neural network
 
-    # create the layers and pass them the input tensor to get the output tensor:
-    layer_1 = Dense(
-        units=n_hidden_1,
-        activation="relu",
-        kernel_regularizer=regularizers.l2(lambda_loss),
-        kernel_initializer="he_normal",
-    )(input)
+    """
 
-    layer_2 = Dense(
-        units=n_hidden_2,
-        activation="relu",
-        kernel_regularizer=regularizers.l2(lambda_loss),
-        kernel_initializer="he_normal",
-    )(layer_1)
+    def __init__(self, model_name, loglevel):
+        # Process parameter
+        super().__init__(model_name, loglevel)
+        self.model_name = model_name
 
-    layer_3 = Dense(
-        units=n_hidden_3,
-        activation="relu",
-        kernel_regularizer=regularizers.l2(lambda_loss),
-        kernel_initializer="he_normal",
-    )(layer_2)
+        # Hyperparameter
+        # # Data
+        self.colums_to_use = [0,1,2,3,4,5,6,7,8]  # List of data columns to be used
 
-    out_layer = Dense(
-        units=n_classes,
-        activation="softmax",
-        kernel_regularizer=regularizers.l2(lambda_loss),
-        kernel_initializer="he_normal",
-    )(layer_3)
+        # # Modell
+        self.n_input = None # Set in code
+        self.n_hidden_1 = 100  # Num of features in the first hidden layer
+        self.n_hidden_2 = 50  # Num of features in the first hidden layer
+        self.n_hidden_3 = 25  # Num of features in the first hidden layer
+        self.n_hidden_4 = 1  # Num of features in the first hidden layer
+        self.n_classes = None  # Number of classification classes (set in code)
+        self.labels = LABELS
+        self.init_kernel = "random_normal"  # "he_normal", 'random_normal'
+        self.activation_hidden = "relu"
+        self.activation_output = "softmax"
+        # # Optimizer
+        self.learning_rate = 0.001
+        self.lambda_loss_amount = 0.000191
+        self.metric = "accuracy"
 
-    # define the model's start and end points
-    model = Model(inputs=input, outputs=out_layer)
+        # # Training
+        self.monitor = "val_loss"  # "val_acc"
+        self.mode = "auto" #""min"  # "max"
+        self.patience = 5
+        self.batch_size = 0
+        self.epochs = 1000
 
-    loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits_v2(
-        logits=y_pred, labels=y_true
-    )
-    model.compile(
-        # loss="categorical_crossentropy",
-        loss=loss_fn,
-        # optimizer=Adam(lr=learning_rate),
-        optimizer=tf.train.AdamOptimizer(learning_rate=learning_rate),
-        metrics=["accuracy"],
-    )
+        # END Hyperparameter
 
-    model.summary()
-
-    return model
-
-
-def train_model(model, train_data, test_data, batch_size, training_epochs):
-    # Data
-    X_train, y_train = train_data
-    X_test, y_test = test_data
-
-    # Callbacks
-    # for Tensorboard evaluation
-    tensorboard = TensorBoard(
-        log_dir=os.path.join(TB_PATH, TB_NAME),
-        update_freq="epoch",
-        write_graph=True,
-        write_images=True,
-        histogram_freq=0,
-        write_grads=False,
-    )
-    # for saving network with weights
-    checkpoint = ModelCheckpoint(
-        filepath=os.path.join(
-            MODEL_PATH, TB_NAME, "weights.{epoch:03d}-{val_loss:.2f}.hdf5"
-        ),
-        monitor="val_loss",  # monitor="val_acc",
-        save_best_only=True,
-        mode="min",  # mode="max",
-        verbose=1,
-        period=1,
-    )
-    if not os.path.isdir(os.path.join(MODEL_PATH, TB_NAME)):
-        os.mkdir(os.path.join(MODEL_PATH, TB_NAME))
-    # for early termination
-    earlyterm = EarlyStopping(
-        monitor="val_loss",
-        mode="min",
-        patience=10,
-        restore_best_weights=True,
-        verbose=1,
-    )
-    callbacks = [tensorboard, checkpoint, earlyterm]
-
-    # Training
-    history = model.fit(
-        X_train,
-        y_train,
-        validation_data=(X_test, y_test),
-        batch_size=batch_size,
-        epochs=training_epochs,
-        verbose=2,
-        callbacks=callbacks,
-    )
-
-    print("Training Finished!")
-    return history
+        # Display
+        self.display_iter = 30000
+        # self.loglevel 0: All Msg 1: No INFO 2: No INFO & WARNING 3: No INFO, WARNING & ERROR
+        self.callback_verbosity = 1  # 0: quiet // 1: update_messagse
+        self.eval_verbosity = 0  # 0: quiet // 1: update_messagse
+        self.fitting_verbosity = 2  # 0: quiet // 1: animation // 2: summary
+        # # Checkpoint TensorBoard
+        self.tb_update_freq = "epoch"
+        self.tb_write_graph = True
+        self.tb_write_images = True
+        # # Checkpoint ModelCheckpoint
+        self.save_every_epochs = 1
 
 
-def main():
-    # Startup Parameters
-    colums_to_use = [0, 1,2,3,4,5,6,7,8]  # colums_to_use=[:]
+##############################################################################################
+# Neural Network
+# API
+##############################################################################################
 
-    # Data
-    # # Loading
-    X_train, y_train, X_test, y_test = data(colums_to_use)
-    # # Features
-    n_steps = X_train.shape[1]  # 128 timesteps per series
-    n_input = X_train.shape[2]  # 2 input parameters per timestep
-    X_train = X_train.reshape(X_train.shape[0], -1)
-    X_test = X_test.reshape(X_test.shape[0], -1)
-    train_data = X_train, y_train
-    test_data = X_test, y_test
 
-    # Graph
-    # # Dimension
-    training_data_count = X_train.shape[0]
-    # # Parameter
-    learning_rate = 0.001
-    lambda_loss_amount = 0.000191
-    training_epochs = 100
-    batch_size = 3000
-    display_step = 1
-    # # Network Parameters
-    n_input    = X_train.shape[1]
-    n_hidden_1 = n_input  # 1st layer number of features
-    n_hidden_2 = 4*n_input  # 2nd layer number of features
-    n_hidden_3 = n_input  # 2nd layer number of features
-    n_classes = 6  #  total classes (0-5 movements)
+class SNNLayerN(BaseNN):
+    def __init__(self, hyperparameter):
+        super().__init__(hyperparameter)
+        self.parameter: HyperParameters = hyperparameter
 
-    print("Measure Model SetUp")
-    start_process_time = time.process_time()
-    start_perf_time = time.perf_counter()
-    model = define_model(n_input, n_hidden_1, n_hidden_2, n_hidden_3, n_classes, learning_rate,lambda_loss_amount)
-    print(f"{time.process_time()-start_process_time}s with time.process_time()")
-    print(f"{time.perf_counter()-start_perf_time}s with time.perf_counter()")
+    @timing
+    def load_data(
+        self
+    ) -> Tuple[
+        Tuple[Union[DataFrame, Series, ndarray], ...],
+        Tuple[Union[DataFrame, Series, ndarray], ...],
+        Tuple[Union[DataFrame, Series, ndarray], ...],
+    ]:
+        # Import Boston data
+        x_train, y_train, x_test, y_test = data(self.parameter.colums_to_use)
 
-    # # Training
-    # Up to now we only defined the graph of our network, now we start a tensorflow session to acutally perform
-    # the optimization.
-    # Launch the  Training
-    print("Measure Model Training")
-    start_process_time = time.process_time()
-    start_perf_time = time.perf_counter()
-    train_model(model, train_data, test_data, batch_size, training_epochs)
-    print(f"{time.process_time() - start_process_time}s with time.process_time()")
-    print(f"{time.perf_counter() - start_perf_time}s with time.perf_counter()")
 
-    # Test model
-    score = model.evaluate(X_test, y_test, verbose=0)
-    # Calculate accuracy
-    print("Accuracy:", score)
+
+        # # Features
+        if len(x_train.shape) > 2:
+            # Flatten Input
+            x_train = x_train.reshape(x_train.shape[0], -1)
+            x_test = x_test.reshape(x_test.shape[0], -1)
+            # (or) Feature Extracion Input
+            # feature_0 = np.mean(x_train, axis=1)
+            # feature_1 = np.std(x_train, axis=1)
+            # x_train = np.concatenate((feature_0, feature_1), axis=1)
+            # feature_0 = np.mean(x_test, axis=1)
+            # feature_1 = np.std(x_test, axis=1)
+            # x_test = np.concatenate((feature_0, feature_1), axis=1)
+        y_train = one_hot(y_train)
+        y_test = one_hot(y_test)
+        train_data = x_train, y_train
+        test_data = x_test, y_test
+        valid_data = np.ndarray([]), np.ndarray([])
+        self.test_data = test_data
+        self.validation_data = valid_data
+        return train_data, test_data, valid_data
+
+    @timing
+    def define_model(self, input_shape, output_shape) -> Model:
+        # Input (number of inputs)
+        n_input = input_shape[1]
+        self.parameter.n_input = n_input
+        # Output (number of classes)
+        n_classes =output_shape[1]
+        self.parameter.n_classes = n_classes
+
+        # Start defining the input tensor:
+        input_layer = Input((n_input,))
+
+        # create the layers and pass them the input tensor to get the output tensor:
+        layer_1 = Dense(
+            units=self.parameter.n_hidden_1,
+            activation=self.parameter.activation_hidden,
+            kernel_regularizer= l2(self.parameter.lambda_loss_amount),
+            kernel_initializer=self.parameter.init_kernel,
+        )(input_layer)
+
+        layer_2 = Dense(
+            units=self.parameter.n_hidden_2,
+            activation=self.parameter.activation_hidden,
+            kernel_regularizer= l2(self.parameter.lambda_loss_amount),
+            kernel_initializer=self.parameter.init_kernel,
+        )(layer_1)
+
+        layer_3 = Dense(
+            units=self.parameter.n_hidden_3,
+            activation=self.parameter.activation_hidden,
+            kernel_regularizer= l2(self.parameter.lambda_loss_amount),
+            kernel_initializer=self.parameter.init_kernel,
+        )(layer_2)
+
+        out_layer = Dense(
+            units=self.parameter.n_classes,
+            activation=self.parameter.activation_output,
+            kernel_initializer=self.parameter.init_kernel,
+            # kernel_regularizer= l2(self.parameter.lambda_loss_amount),
+
+        )(layer_3)
+
+        # define the model's start and end points
+        model = Model(inputs=input_layer, outputs=out_layer)
+
+        # define the loss function
+        loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits_v2(
+            logits=y_pred, labels=y_true
+        )
+
+        # put all components together
+        model.compile(
+            loss=loss_fn, # loss="categorical_crossentropy",
+            optimizer=Adam(lr=self.parameter.learning_rate),
+            #optimizer=tf.train.AdamOptimizer(
+            #    learning_rate=self.parameter.learning_rate
+            #),
+            metrics=[self.parameter.metric],
+        )
+        if self.parameter.loglevel == 0:
+            pass
+        model.summary()
+
+        return model
+
+    @timing
+    def train_model(self, model, train_data, validation_data):
+        # Data
+        x_train, y_train = train_data
+        x_test, y_test = validation_data
+
+        # Callbacks
+        # for Tensorboard evaluation
+        tensorboard = TensorBoard(
+            log_dir=self.parameter.tensorboard_dir,
+            update_freq=self.parameter.tb_update_freq,
+            write_graph=self.parameter.tb_write_graph,
+            write_images=self.parameter.tb_write_images,
+            histogram_freq=0,
+            write_grads=False,
+        )
+        # for saving network with weights
+        checkpoint = ModelCheckpoint(
+            filepath=os.path.join(
+                self.parameter.model_dir, "weights.{epoch:03d}-{val_loss:.2f}.hdf5"
+            ),
+            monitor=self.parameter.monitor,
+            save_best_only=True,
+            mode=self.parameter.mode,
+            verbose=self.parameter.callback_verbosity,
+            period=self.parameter.save_every_epochs,
+        )
+        # for early termination
+        earlyterm = EarlyStopping(
+            monitor=self.parameter.monitor,
+            mode=self.parameter.mode,
+            patience=self.parameter.patience,
+            restore_best_weights=True,
+            verbose=self.parameter.callback_verbosity,
+            min_delta=0.001,
+        )
+        callbacks = [tensorboard,earlyterm]
+
+        # Training
+        if self.parameter.batch_size > 0:
+            history = model.fit(
+                x_train,
+                y_train,
+                validation_data=(x_test, y_test),
+                batch_size=self.parameter.batch_size,
+                epochs=self.parameter.epochs,
+                verbose=self.parameter.fitting_verbosity,
+                callbacks=callbacks,
+            )
+        else:
+            history = model.fit(
+                x_train,
+                y_train,
+                validation_data=(x_test, y_test),
+                epochs=self.parameter.epochs,
+                verbose=self.parameter.fitting_verbosity,
+                callbacks=callbacks,
+            )
+        print("Training Finished!")
+        return history
+
+    def setup_and_train_network(self):
+        # Data
+        # # Loading
+        train_data, test_data, _ = self.load_data()
+        # EITHER
+        # with keras_backend.get_session() as sess: # get active tf-session
+        # OR
+        config = tf.ConfigProto(device_count={"GPU": 1, "CPU": 1})
+        config.gpu_options.allow_growth = True
+        with tf.Session(config=config) as sess:
+            keras_backend.set_session(sess)
+            # END EITHER
+
+            # Model
+            # # Definition
+            model = self.define_model(train_data[0].shape, train_data[1].shape)
+
+            # # Training
+            training_history = self.train_model(model, train_data, test_data)
+
+            # # Calculate accuracy
+            final_metrics = self.calc_categorical_accuracy(model, test_data)
+
+            # # Calulate prediction
+            predictions, given = self.is_vs_should_categorical(model, test_data)
+            label_vectors = (predictions, given)
+
+        keras_backend.clear_session()
+
+        return model, final_metrics, label_vectors, training_history
 
 
 if __name__ == "__main__":
-    main()
+    from tensorflow.python.client import device_lib
+
+    print("ENVIRONMENT")
+    print(device_lib.list_local_devices())
+    print("")
+    hyperparameters = HyperParameters(model_name=model_name, loglevel=0)
+    neural_network = SNNLayerN(hyperparameters)
+    neural_network.setup_and_train_network()
