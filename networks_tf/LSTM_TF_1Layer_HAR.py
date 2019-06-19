@@ -233,8 +233,8 @@ def main():
     learning_rate = 0.025
     lambda_loss_amount = 0.000191
     training_iters = training_data_count * 100  # 00  # Loop 300 times on the dataset
-    batch_size = 3000
-    display_iter = 30000  # To show test set accuracy during training
+    batch_size = training_data_count
+    display_iter = training_data_count  # To show test set accuracy during training
     n_hidden = 4  # Num of features in the first hidden layer
     n_classes = 6  # Total classes
 

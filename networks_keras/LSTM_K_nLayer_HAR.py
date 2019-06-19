@@ -12,13 +12,13 @@ from pandas import DataFrame, Series
 
 # keras imports
 import tensorflow.contrib.keras.api.keras.backend as keras_backend
-from tensorflow.contrib.keras.api.keras.layers import Input, Dense
+from tensorflow.contrib.keras.api.keras.layers import Input, Dense , LSTM #, CuDNNLSTM
 from tensorflow.contrib.keras.api.keras.models import Model
 from tensorflow.contrib.keras.api.keras.regularizers import l2
 from tensorflow.contrib.keras.api.keras.optimizers import Adam
 
 from tensorflow.python.keras.utils import plot_model
-
+#from tensorflow.keras.layers import CuDNNLSTM as LSTM
 
 model_name = "SNN_3_Layer_HAR"
 
@@ -60,7 +60,7 @@ class HyperParameters(BaseParameters):
             5,
             6,
             7,
-            8,
+            8
         ]  # List of data columns to be used
         self.colum_names = INPUT_SIGNAL_TYPES
         self.labels = LABELS  # Labels of th categorizations
@@ -76,7 +76,7 @@ class HyperParameters(BaseParameters):
         self.activation_output = "softmax"
 
         # # Optimizer (Hyperparamters)
-        self.learning_rate = 0.001
+        self.learning_rate = 0.025
         self.lambda_loss_amount = 0.000191
         self.metric = "accuracy"
 
@@ -89,7 +89,7 @@ class HyperParameters(BaseParameters):
 ##############################################################################################
 
 
-class SNNLayerN(BaseNN):
+class LSTMLayerN(BaseNN):
     def __init__(self, hyperparameter):
         super().__init__(hyperparameter)
         self.parameter: HyperParameters = hyperparameter
@@ -106,17 +106,17 @@ class SNNLayerN(BaseNN):
         x_train, y_train, x_test, y_test = data(self.parameter.colums_to_use)
 
         # # Features
-        if len(x_train.shape) > 2:
-            # Flatten Input
-            x_train = x_train.reshape(x_train.shape[0], -1)
-            x_test = x_test.reshape(x_test.shape[0], -1)
-            # (or) Feature Extracion Input
-            # feature_0 = np.mean(x_train, axis=1)
-            # feature_1 = np.std(x_train, axis=1)
-            # x_train = np.concatenate((feature_0, feature_1), axis=1)
-            # feature_0 = np.mean(x_test, axis=1)
-            # feature_1 = np.std(x_test, axis=1)
-            # x_test = np.concatenate((feature_0, feature_1), axis=1)
+        # if len(x_train.shape) > 2:
+        #     # Flatten Input
+        #     x_train = x_train.reshape(x_train.shape[0], -1)
+        #     x_test = x_test.reshape(x_test.shape[0], -1)
+        #     # (or) Feature Extracion Input
+        #     # feature_0 = np.mean(x_train, axis=1)
+        #     # feature_1 = np.std(x_train, axis=1)
+        #     # x_train = np.concatenate((feature_0, feature_1), axis=1)
+        #     # feature_0 = np.mean(x_test, axis=1)
+        #     # feature_1 = np.std(x_test, axis=1)
+        #     # x_test = np.concatenate((feature_0, feature_1), axis=1)
         y_train = one_hot(y_train)
         y_test = one_hot(y_test)
         train_data = x_train, y_train
@@ -136,36 +136,27 @@ class SNNLayerN(BaseNN):
         self.parameter.n_classes = n_classes
 
         # Start defining the input tensor:
-        input_layer = Input((n_input,))
+        input_layer = Input((128,9,))
 
         # create the layers and pass them the input tensor to get the output tensor:
-        layer_1 = Dense(
-            units=self.parameter.n_hidden_1,
-            activation=self.parameter.activation_hidden,
-            kernel_regularizer=l2(self.parameter.lambda_loss_amount),
+        layer_1 = LSTM(
+            units=4,# self.parameter.n_hidden_2, # hidden (=output) neurons
+            unit_forget_bias=True,
             kernel_initializer=self.parameter.init_kernel,
+            #dropout=0.2,
+            #recurrent_dropout=0.2,
+            #input_shape=(128, 9), #(time steps, measurments per time step)
+            return_sequences=False,
+            kernel_regularizer=l2(self.parameter.lambda_loss_amount),
         )(input_layer)
 
-        layer_2 = Dense(
-            units=self.parameter.n_hidden_2,
-            activation=self.parameter.activation_hidden,
-            kernel_regularizer=l2(self.parameter.lambda_loss_amount),
-            kernel_initializer=self.parameter.init_kernel,
-        )(layer_1)
-
-        layer_3 = Dense(
-            units=self.parameter.n_hidden_3,
-            activation=self.parameter.activation_hidden,
-            kernel_regularizer=l2(self.parameter.lambda_loss_amount),
-            kernel_initializer=self.parameter.init_kernel,
-        )(layer_2)
 
         out_layer = Dense(
             units=self.parameter.n_classes,
             activation=self.parameter.activation_output,
             kernel_initializer=self.parameter.init_kernel,
-            # kernel_regularizer= l2(self.parameter.lambda_loss_amount),
-        )(layer_3)
+            kernel_regularizer= l2(self.parameter.lambda_loss_amount),
+        )(layer_1)
 
         # Define the model's start and end points
         model = Model(inputs=input_layer, outputs=out_layer)
@@ -272,5 +263,5 @@ if __name__ == "__main__":
     print(device_lib.list_local_devices())
     print("")
     hyperparameters = HyperParameters(model_name=model_name, loglevel=0)
-    neural_network = SNNLayerN(hyperparameters)
+    neural_network = LSTMLayerN(hyperparameters)
     neural_network.setup_and_train_network()
