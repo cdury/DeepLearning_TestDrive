@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from typing import Union
 
-from tensorflow.contrib.keras.api.keras.utils import to_categorical
+from tensorflow.python.keras.utils import to_categorical
 
 #### One hot encoding
 # To train with the classification we represent the labe as on hot encoded vector:

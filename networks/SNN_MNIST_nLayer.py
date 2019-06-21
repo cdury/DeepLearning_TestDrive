@@ -13,7 +13,6 @@ from pandas import DataFrame, Series
 # keras imports
 from tensorflow.contrib.keras.api.keras.layers import Input, Dense
 from tensorflow.contrib.keras.api.keras.models import Model
-from tensorflow.contrib.keras.api.keras.optimizers import Adam
 from tensorflow.contrib.keras.api.keras.callbacks import (
     TensorBoard,
     ModelCheckpoint,
@@ -21,7 +20,7 @@ from tensorflow.contrib.keras.api.keras.callbacks import (
 )
 import tensorflow.contrib.keras.api.keras.backend as keras_backend
 
-model_name = "SNN_3_Layer"
+model_name = "SNN_2_Layer"
 
 # helper imports
 
@@ -30,12 +29,11 @@ model_name = "SNN_3_Layer"
 # Parameters
 ##############################################################################################
 # Data
-from helper_nn.helper_load_data import boston_housing_data as data
-from helper_nn.helper_load_data import BOSTON_DATASET_PATH as DATASET_PATH
-from helper_nn.helper_load_data import BOSTON_LABELS as LABELS
+from helper_nn.helper_load_data import mnist_data as data
+from helper_nn.helper_load_data import MNIST_LABELS as LABELS
 
 # Network
-from networks_keras.Base_Supervised_Categorical import BaseParameters, BaseNN, timing
+from networks.Base_Supervised_Categorical import BaseParameters, BaseNN, timing
 
 
 class HyperParameters(BaseParameters):
@@ -54,13 +52,11 @@ class HyperParameters(BaseParameters):
 
         # # Modell
         self.n_input = None # Set in code
-        self.n_hidden_1 = 100  # Num of features in the first hidden layer
-        self.n_hidden_2 = 50  # Num of features in the first hidden layer
-        self.n_hidden_3 = 25  # Num of features in the first hidden layer
-        self.n_hidden_4 = 1  # Num of features in the first hidden layer
+        self.n_hidden_1 = 256  # Num of features in the first hidden layer
+        self.n_hidden_2 = 256  # Num of features in the first hidden layer
         self.n_classes = None  # Number of classification classes (set in code)
         self.labels = LABELS
-        self.init_kernel = "random_normal"  # "he_normal", 'random_normal'
+        self.init_kernel = "he_normal"  # "he_normal", 'random_normal'
         self.activation_hidden = "relu"
         self.activation_output = "softmax"
         # # Optimizer
@@ -70,19 +66,19 @@ class HyperParameters(BaseParameters):
 
         # # Training
         self.monitor = "val_loss"  # "val_acc"
-        self.mode = "auto" #""min"  # "max"
-        self.patience = 5
-        self.batch_size = 0
-        self.epochs = 1000
+        self.mode = "min"  # "max"
+        self.patience = 10
+        self.batch_size = 100
+        self.epochs = 10
 
         # END Hyperparameter
 
         # Display
         self.display_iter = 30000
         # self.loglevel 0: All Msg 1: No INFO 2: No INFO & WARNING 3: No INFO, WARNING & ERROR
-        self.callback_verbosity = 1  # 0: quiet // 1: update_messagse
+        self.callback_verbosity = 0  # 0: quiet // 1: update_messagse
         self.eval_verbosity = 0  # 0: quiet // 1: update_messagse
-        self.fitting_verbosity = 2  # 0: quiet // 1: animation // 2: summary
+        self.fitting_verbosity = 0  # 0: quiet // 1: animation // 2: summary
         # # Checkpoint TensorBoard
         self.tb_update_freq = "epoch"
         self.tb_write_graph = True
@@ -110,7 +106,7 @@ class SNNLayerN(BaseNN):
         Tuple[Union[DataFrame, Series, ndarray], ...],
         Tuple[Union[DataFrame, Series, ndarray], ...],
     ]:
-        # Import Boston data
+        # Import MINST data
         x_train, y_train, x_test, y_test = data()
         # # Features
         train_data = x_train, y_train
@@ -121,7 +117,7 @@ class SNNLayerN(BaseNN):
         return train_data, test_data, valid_data
 
     @timing
-    def define_model(self, input_shape, output_shape) -> Model:
+    def define_model(self, input_shape,output_shape) -> Model:
         # Input (number of inputs)
         dim = len(input_shape)
         if dim > 2:
@@ -145,30 +141,21 @@ class SNNLayerN(BaseNN):
             units=self.parameter.n_hidden_1,
             activation=self.parameter.activation_hidden,
             # kernel_regularizer=regularizers.l2(0.0002),
-            kernel_initializer=self.parameter.init_kernel,
+            # kernel_initializer="he_normal",
         )(input_layer)
 
         layer_2 = Dense(
             units=self.parameter.n_hidden_2,
             activation=self.parameter.activation_hidden,
             # kernel_regularizer=regularizers.l2(0.0002),
-            kernel_initializer=self.parameter.init_kernel,
+            # kernel_initializer="he_normal",
         )(layer_1)
-
-        layer_3 = Dense(
-            units=self.parameter.n_hidden_3,
-            activation=self.parameter.activation_hidden,
-            # kernel_regularizer=regularizers.l2(0.0002),
-            kernel_initializer=self.parameter.init_kernel,
-        )(layer_2)
-
         out_layer = Dense(
             units=self.parameter.n_classes,
-            activation=self.parameter.activation_output,
-            kernel_initializer=self.parameter.init_kernel,
+            # kernel_initializer="he_normal",
             # kernel_regularizer=regularizers.l2(0.0002),
-
-        )(layer_3)
+            activation=self.parameter.activation_output,
+        )(layer_2)
 
         # define the model's start and end points
         model = Model(inputs=input_layer, outputs=out_layer)
@@ -181,10 +168,10 @@ class SNNLayerN(BaseNN):
         # put all components together
         model.compile(
             loss=loss_fn, # loss="categorical_crossentropy",
-            optimizer=Adam(), #Adam(lr=learning_rate),
-            #optimizer=tf.train.AdamOptimizer(
-            #    learning_rate=self.parameter.learning_rate
-            #),
+            # optimizer=Adam(lr=learning_rate),
+            optimizer=tf.train.AdamOptimizer(
+                learning_rate=self.parameter.learning_rate
+            ),
             metrics=[self.parameter.metric],
         )
         if self.parameter.loglevel == 0:
@@ -226,9 +213,8 @@ class SNNLayerN(BaseNN):
             patience=self.parameter.patience,
             restore_best_weights=True,
             verbose=self.parameter.callback_verbosity,
-            min_delta=0.001,
         )
-        callbacks = [tensorboard,  earlyterm]
+        callbacks = [tensorboard, checkpoint, earlyterm]
 
         # Training
         if self.parameter.batch_size > 0:
@@ -250,6 +236,7 @@ class SNNLayerN(BaseNN):
                 verbose=self.parameter.fitting_verbosity,
                 callbacks=callbacks,
             )
+
         print("Training Finished!")
         return history
 
@@ -257,6 +244,7 @@ class SNNLayerN(BaseNN):
         # Data
         # # Loading
         train_data, test_data, _ = self.load_data()
+
         # EITHER
         # with keras_backend.get_session() as sess: # get active tf-session
         # OR
@@ -264,7 +252,7 @@ class SNNLayerN(BaseNN):
         config.gpu_options.allow_growth = True
         with tf.Session(config=config) as sess:
             keras_backend.set_session(sess)
-            # END EITHER
+        # END EITHER
 
             # Model
             # # Definition
@@ -291,6 +279,6 @@ if __name__ == "__main__":
     print("ENVIRONMENT")
     print(device_lib.list_local_devices())
     print("")
-    hyperparameters = HyperParameters(model_name=model_name, loglevel=0)
+    hyperparameters = HyperParameters(model_name=model_name, loglevel=3)
     neural_network = SNNLayerN(hyperparameters)
     neural_network.setup_and_train_network()

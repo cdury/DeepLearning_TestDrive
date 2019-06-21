@@ -1,6 +1,8 @@
 import os
+import logging
 from functools import wraps
 from time import process_time, perf_counter, strftime, gmtime
+from logging.config import dictConfig
 
 # typing imports
 from typing import Tuple, List, Any, Union, Optional
@@ -8,12 +10,30 @@ from numpy import ndarray
 from pandas import DataFrame, Series
 
 # keras imports
-from tensorflow.contrib.keras.api.keras.models import Model
-from tensorflow.contrib.keras.api.keras.callbacks import (
-    TensorBoard,
-    ModelCheckpoint,
-    EarlyStopping,
+from tensorflow.python.keras.api._v2 import keras
+
+# # Model
+Model = keras.models.Model
+# # Callback
+TensorBoard = keras.callbacks.TensorBoard
+ModelCheckpoint = keras.callbacks.ModelCheckpoint
+EarlyStopping = keras.callbacks.EarlyStopping
+
+# Global object
+loglevel_this = logging.WARN
+dictConfig(
+    dict(
+        version=1,
+        formatters={
+            "f": {"format": "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"}
+        },
+        handlers={
+            "h": {"class": "logging.StreamHandler", "formatter": "f", "level": loglevel_this}
+        },
+        root={"handlers": ["h"], "level": loglevel_this},
+    )
 )
+logger = logging.getLogger("Base_Supervised_Categorical")
 
 
 def timing(method):
@@ -24,7 +44,7 @@ def timing(method):
         return_value = method(*args, **kw)
         wall_te = perf_counter()
         pu_te = process_time()
-        print(
+        logger.debug(
             f"Method:{method.__name__}"
             f" took {wall_te-wall_ts:2.4f}sec ({pu_te-pu_ts:2.4f}sec)"
         )
@@ -34,10 +54,12 @@ def timing(method):
 
 
 class BaseParameters:
-    def __init__(self, model_name, loglevel):
+    def __init__(self, model_name, loglevel, parent_name=None):
         # Technical & HyperOpt
         self.model_name = model_name
-        self.parent_name = ""  # RunName of the optimization run when using hyperopt
+        self.parent_name = (
+            parent_name
+        )  # RunName of the optimization run when using hyperopt
         self.tid = None  # Trial ID when using hyperopt
         self.tb_suffix = ""  #
         self.timestamp = strftime("%y%m%d%H%M", gmtime())
@@ -45,32 +67,38 @@ class BaseParameters:
         # Filesystem & Paths
         home_path = os.getcwd()
         base_ts_name = model_name + "_" + self.timestamp
-        self.log_path = os.path.join(home_path, "log")
+        self.log_path = os.path.join(
+            home_path, "log", parent_name if parent_name else model_name
+        )
 
         # # data
         self.data_path = os.path.join(home_path, "data")
 
         # # model
-        self.model_path = os.path.join(home_path, "models")
+        self.model_path = os.path.join(
+            home_path, "models", parent_name if parent_name else model_name
+        )
         self.model_dir = os.path.join(self.model_path, base_ts_name)
         if not os.path.isdir(self.model_dir):
-            os.mkdir(self.model_dir)
+            os.makedirs(self.model_dir)
 
         # # tensorboard
-        self.tensorboard_path = os.path.join(home_path, "tensorboard")
+        self.tensorboard_path = os.path.join(
+            home_path, "tensorboard", parent_name if parent_name else model_name
+        )
         self.tensorboard_dir = os.path.join(self.tensorboard_path, base_ts_name)
 
         # Logging
         # # Internal Tensorflow logging
         # 0: All Msg 1: No INFO 2: No INFO & WARNING 3: No INFO, WARNING & ERROR
-        if isinstance(loglevel, int):
-            str_loglevel = str(loglevel)
-        elif isinstance(loglevel, str):
-            str_loglevel = loglevel
-            loglevel = int(loglevel)
-        else:
+        if loglevel <= logging.DEBUG:
             str_loglevel = "0"
-            loglevel = 0
+        elif logging.INFO <= loglevel <= logging.WARNING :
+            str_loglevel = "1"
+        elif loglevel == logging.ERROR :
+            str_loglevel = "2"
+        else:
+            str_loglevel = "3"
         self.loglevel = loglevel
         os.environ["TF_CPP_MIN_LOG_LEVEL"] = str_loglevel
         # DANGER Unknown
@@ -101,7 +129,7 @@ class BaseParameters:
         # # Training (Hyperparamters)
         self.monitor = "val_loss"  # "val_acc"
         self.mode = "auto"  # ""min"  # "max"
-        self.patience = 5
+        self.patience = 10
         self.batch_size = 0
         self.epochs = 1000
 
@@ -174,7 +202,7 @@ class BaseNN:
         x_test, y_test = test_data
         score = model.evaluate(x_test, y_test, verbose=self.parameter.eval_verbosity)
         for name, value in zip(model.metrics_names, score):
-            print(f"{name}: {value}")
+            logger.info(f"{name}: {value}")
             final_metrics[name] = value
         return final_metrics
 

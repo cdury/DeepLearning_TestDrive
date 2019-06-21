@@ -11,15 +11,16 @@ DATA_PATH = os.path.join("data")
 #########################################################################################
 #                                                                                       #
 #                                    MNIST Dataset                                      #
-# from helper_nn.helper_load_data import mnist_data as data                             #
-# from helper_nn.helper_load_data import MNIST_DATASET_PATH as DATASET_PATH             #
-# from helper_nn.helper_load_data import MNIST_LABELS as LABELS                         #
+# from helper.helper_load_data import mnist_data as data                             #
+# from helper.helper_load_data import MNIST_DATASET_PATH as DATASET_PATH             #
+# from helper.helper_load_data import MNIST_LABELS as LABELS                         #
 # #######################################################################################
 MNIST_DATASET_PATH = os.path.join(DATA_PATH, "MNIST")
 MNIST_LABELS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 MNIST_DATASET = None
 
 def mnist_data():
+    # ToDo
     from tensorflow.examples.tutorials.mnist import input_data
     global MNIST_DATASET
     mnist = input_data.read_data_sets(MNIST_DATASET_PATH, one_hot=True)
@@ -31,9 +32,9 @@ def mnist_data():
 #########################################################################################
 #                                                                                       #
 #                           Boston Housing Dataset                                      #
-# from helper_nn.helper_load_data import boston_housing_data as data                    #
-# from helper_nn.helper_load_data import BOSTON_DATASET_PATH as DATASET_PATH            #
-# from helper_nn.helper_load_data import BOSTON_LABELS as LABELS                        #
+# from helper.helper_load_data import boston_housing_data as data                    #
+# from helper.helper_load_data import BOSTON_DATASET_PATH as DATASET_PATH            #
+# from helper.helper_load_data import BOSTON_LABELS as LABELS                        #
 # #######################################################################################
 from sklearn.model_selection import train_test_split
 from scipy.stats import zscore
@@ -85,9 +86,9 @@ def boston_housing_data():
 #########################################################################################
 #                                                                                       #
 #                                    UCI HAR Dataset                                    #
-# from helper_nn.helper_load_data import uci_har_dataset_data as data                   #
-# from helper_nn.helper_load_data import UCI_HAR_INPUT_SIGNAL_TYPESas INPUT_SIGNAL_TYPES#
-# from helper_nn.helper_load_data import UCI_HAR_LABELS as LABELS                       #
+# from helper.helper_load_data import uci_har_dataset_data as data                   #
+# from helper.helper_load_data import UCI_HAR_INPUT_SIGNAL_TYPESas INPUT_SIGNAL_TYPES#
+# from helper.helper_load_data import UCI_HAR_LABELS as LABELS                       #
 # #######################################################################################
 # Labels of input columns
 UCI_HAR_INPUT_SIGNAL_TYPES = [

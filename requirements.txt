@@ -1,7 +1,7 @@
 ### ML
 scikit-learn # import sklearn
 #-#statsmodels
-tensorflow-gpu
+tensorflow-gpu #pip install tensorflow-gpu=2.0.0-beta1
 
 ### Numerics
 numpy

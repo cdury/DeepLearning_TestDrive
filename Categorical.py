@@ -11,36 +11,33 @@
 #         NeuralNetwork Framework:
 #           Keras 2.24
 #           Tensorflow 1.13
-__version__ = "0.0alpha"
-import os
+__version__ = "1.0"
+# general imports
 import gc
-import numpy as np
-import pandas as pd
-import tensorflow as tf
+import logging
 
+# typing imports
 from typing import Any, Dict, Tuple, Union, Optional
-from pandas import DataFrame
-from tensorflow import Tensor, Operation
-from tensorflow.contrib.keras.api.keras.models import Sequential
-import tensorflow.contrib.keras.api.keras.backend as K
 
-from helper_nn.helper_graphical import category_evaluation
+# helper import
+from helper.helper_graphical import category_evaluation
 
-# from networks_keras.SNN_K_nLayer_MNIST import SNNLayerN as NeuralNetwork
-# from networks_keras.SNN_K_nLayer_MNIST import HyperParameters
-# from networks_keras.SNN_K_nLayer_MNIST import model_name
+# model import
+# from networks.SNN_K_nLayer_MNIST import SNNLayerN as NeuralNetwork
+# from networks.SNN_K_nLayer_MNIST import HyperParameters
+# from networks.SNN_K_nLayer_MNIST import model_name
 
-# from networks_keras.SNN_K_nLayer_BOSTON import SNNLayerN as NeuralNetwork
-# from networks_keras.SNN_K_nLayer_BOSTON import HyperParameters
-# from networks_keras.SNN_K_nLayer_BOSTON import model_name
+# from networks.SNN_K_nLayer_BOSTON import SNNLayerN as NeuralNetwork
+# from networks.SNN_K_nLayer_BOSTON import HyperParameters
+# from networks.SNN_K_nLayer_BOSTON import model_name
 
-# from networks_keras.SNN_K_nLayer_HAR import SNNLayerN as NeuralNetwork
-# from networks_keras.SNN_K_nLayer_HAR import HyperParameters
-# from networks_keras.SNN_K_nLayer_HAR import model_name
+from networks.SNN_HAR_nLayer import SNNLayerN as NeuralNetwork
+from networks.SNN_HAR_nLayer import HyperParameters
+from networks.SNN_HAR_nLayer import model_name
 
-from networks_keras.LSTM_K_nLayer_HAR import LSTMLayerN as NeuralNetwork
-from networks_keras.LSTM_K_nLayer_HAR import HyperParameters
-from networks_keras.LSTM_K_nLayer_HAR import model_name
+# from networks.LSTM_K_nLayer_HAR import LSTMLayerN as NeuralNetwork
+# from networks.LSTM_K_nLayer_HAR import HyperParameters
+# from networks.LSTM_K_nLayer_HAR import model_name
 
 ##############################################################################################
 # Free to code
@@ -63,11 +60,15 @@ def neural_net(
     )
     # # loss_acc
     train_losses = history.history["loss"] if "loss" in history.history else [0]
-    train_accuracies = history.history["acc"] if "acc" in history.history else [0]
+    train_accuracies = (
+        history.history["accuracy"] if "accuracy" in history.history else [0]
+    )
     test_losses = history.history["val_loss"] if "val_loss" in history.history else [0]
-    test_accs = history.history["val_acc"] if "val_acc" in history.history else [0]
+    test_accs = (
+        history.history["val_accuracy"] if "val_accuracy" in history.history else [0]
+    )
     final_loss = final_metrics["loss"]
-    accuracy = final_metrics["acc"]
+    accuracy = final_metrics["accuracy"]
     loss_acc = (train_losses[-1], train_accuracies[-1], final_loss, accuracy)
 
     # # additional_dict
@@ -128,5 +129,5 @@ def run_and_evaluate(hyperparameter) -> None:
 
 
 if __name__ == "__main__":
-    hyperparameters = HyperParameters(model_name=model_name, loglevel=3)
+    hyperparameters = HyperParameters(model_name=model_name, loglevel=logging.ERROR)
     run_and_evaluate(hyperparameters)

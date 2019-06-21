@@ -12,52 +12,61 @@
 #
 #       - Needs to import function "run_and_get_error":
 #               loss_acc, add_dict = run_and_get_error(hyperparameters)
-from K_Categorical import run_and_get_error, HyperParameters
-
+__version__ = "1.0"
+# general imports
 import os
+import sys
+import logging
 import time
-from hyperopt import hp
+import signal
+import numpy as np
+import pickle
+from functools import partial
+from logging.config import dictConfig
+
+# typing imports
+from typing import Dict, Any
+
+# hyperopt imports
 from hyperopt import fmin, tpe
 from hyperopt import Trials
 from hyperopt import STATUS_OK, STATUS_FAIL
-from functools import partial
-import numpy as np
-import signal
-from typing import Dict, Any
-import sys
-import pickle
 
-# Even with hyperoptimazation, there are still some parameters
-TIMESTAMP = time.strftime("%y%m%d%H%M", time.gmtime())
-optimization_name = "MNIST_SNN"
+# parameter import
+from hyperParams_HAR_SNN import (
+    hyper_opt_name,
+    num_trials,
+    HyperParameters,
+    hyper_param_space,
+    run_and_get_error,
+    load_hyper_params_from_pickle,
+)
+
+# technicalities
 HYPER_PATH = os.path.join("hyperopt")
-HYPER_BASE = optimization_name + "_" + TIMESTAMP
-HYPER_FILE = HYPER_BASE + "_hypopt" + ".hdf5"
-loadFromPickle = False  # True: continue optimization / False: new optimization
-num_trials = 1  # Number of trial-runs
+HYPER_BASE = (
+    hyper_opt_name + "_" + time.strftime("%y%m%d%H%M", time.gmtime())
+)  # Unique name of a hyperoptimization run
+HYPER_FILE = os.path.join(
+    HYPER_PATH, HYPER_BASE + ".pkl"
+)  # Pickle-Filename of the used hyperparameters
 
-# The key in the space must match a variable name in HyperParameters
-# (has to be populated with domain knowledge)
-init_space = {}
-# {"random_seed": hp.choice("random_seed", (0, 1, 3, 7, 11, 33, 42, 110))}
-build_space = {
-    "n_hidden_1" : hp.qloguniform("n_hidden_1", np.log(100), np.log(10000), 1),
-    "n_hidden_2": hp.qloguniform("n_hidden_2", np.log(50), np.log(5000), 1),
-    "n_hidden_3": hp.qloguniform("n_hidden_4", np.log(25), np.log(2500), 1),
-
-}
-# {"size_of_hidden_layer": hp.uniform("size_of_hidden_layer", -2, 2)}
-data_space = {}
-learning_space = {
-    "learning_rate": hp.qloguniform("learning_rate", np.log(0.0001), np.log(1), 0.0001),
-    "lambda_loss_amount": hp.qloguniform("lambda_loss_amount", np.log(0.0000001), np.log(0.1), 0.0000001),
-    "batch_size": hp.quniform("batch_size", 100, 6000, 1),
-}
-
-space = {**init_space, **build_space, **data_space, **learning_space}
-
-
+# Global object
 trials = Trials()
+loglevel = logging.INFO
+dictConfig(
+    dict(
+        version=1,
+        formatters={
+            "f": {"format": "%(asctime)s %(name)-8s %(levelname)-6s %(message)s"}
+        },
+        handlers={
+            "h": {"class": "logging.StreamHandler", "formatter": "f", "level": loglevel}
+        },
+        root={"handlers": ["h"], "level": loglevel},
+    )
+)
+logger = logging.getLogger("HYPER")
 
 
 def objective(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -66,18 +75,24 @@ def objective(args: Dict[str, Any]) -> Dict[str, Any]:
     :param args: A realization of the parameter space "space"
     :return:     Results with this particular sets of parameter
     """
+    logger.info(f"Trial {trials.tids[-1]} : {args}")
     # Instantiate hyperparameters
     hyperparameters = HyperParameters(
-        model_name=f"{optimization_name}_{trials.tids[-1]:04}", loglevel=3
+        model_name=f"{hyper_opt_name}_{trials.tids[-1]:04}",
+        loglevel=logging.ERROR,
+        parent_name=HYPER_BASE,
     )
     # Amend hyperparameters
-    # Optimazation Name
-    hyperparameters.parent_name = HYPER_BASE
     # Trial ID
     hyperparameters.tid = trials.tids[-1]
     hyperparameters.tb_suffix = (
         f"{hyperparameters.parent_name}_tid_{hyperparameters.tid:04}"
     )
+    # Keras(TF) - Logging / Verbosity
+    if loglevel <= logging.DEBUG:
+        hyperparameters.fitting_verbosity = 2
+    else:
+        hyperparameters.fitting_verbosity = 0
     # Search Space
     for key, value in args.items():
         if int(value) == value:
@@ -92,10 +107,12 @@ def objective(args: Dict[str, Any]) -> Dict[str, Any]:
         )
         train_loss, train_accuracy, test_loss, test_accuracy = loss_acc
         # show brief result
-        print("For", args)
-        print(f"Loss    (Train/Test): {train_loss}/{test_loss}")
-        print(f"Accuracy(Train/Test): {train_accuracy}/{test_accuracy}")
-        print("")
+        logger.info(
+            f"Trial {trials.tids[-1]} : Loss    (Train/Test): {train_loss}/{test_loss}"
+        )
+        logger.info(
+            f"Trial {trials.tids[-1]} : Accuracy(Train/Test): {train_accuracy}/{test_accuracy}"
+        )
 
         # return to optimazation loop
         return {
@@ -123,7 +140,7 @@ def save_trials() -> None:
 
     :return:
     """
-    pickle.dump(trials, open(os.path.join(HYPER_PATH, HYPER_FILE), "wb"))
+    pickle.dump(trials, open(HYPER_FILE, "wb"))
 
 
 def summarize_trials() -> None:
@@ -131,32 +148,25 @@ def summarize_trials() -> None:
 
     :return:
     """
-    print()
-    print()
-    print(
-        "Trials is:", np.sort(np.array([x for x in trials.losses() if x is not None]))
-    )
     for trial_dict in sorted(
         trials.trials,
         key=lambda entry: entry["result"]["true_accuracy"]
         if entry["result"]["status"] == STATUS_OK
         else 0.0,
     ):
-        # for key, value in trial_dict.items():
-        #    # print(key,value)
-        #    pass
+        for key, value in trial_dict.items():
+            logger.debug(f"trial_dict {key}:{value}")
+            pass
         result = trial_dict["result"]
         misc = trial_dict["misc"]
         if result["status"] == STATUS_OK:
-            print(
-                f"tid {misc['tid']}: {misc['vals']} "
-                f"=>\n"
-                f"        Acc {result['true_accuracy']} ({result['accuracy']})"
-                f" Loss ({result['true_loss']}/{result['loss']})"
-            )
+            logger.info(f"tid {misc['tid']}: {misc['vals']} ")
+            logger.info(f"tid {misc['tid']}:  => Acc {result['true_accuracy']} ({result['accuracy']})")
+            logger.info(f"tid {misc['tid']}:  => Loss ({result['true_loss']}/{result['loss']})")
 
         else:
-            print(f"tid {misc['tid']}: {misc['vals']} => NaN")
+            logger.info(f"tid {misc['tid']}: {misc['vals']}")
+            logger.info(f"tid {misc['tid']}:  => NaN")
         # saved_nn = trials.trial_attachments(trial_dict)["saved"]
 
 
@@ -167,25 +177,27 @@ def main() -> None:
     """
     global trials
     try:
-        if loadFromPickle:
+        if load_hyper_params_from_pickle:
+            logger.info(f"Continuing trials file {HYPER_FILE}")
             # continue optimazation with already run trials
-            trials = pickle.load(open(os.path.join(HYPER_PATH, HYPER_FILE), "rb"))
+            trials = pickle.load(open(HYPER_FILE, "rb"))
         else:
-            print("Starting new trials file")
+            logger.info(f"Starting new trials file {HYPER_FILE}")
     except Exception as e:
-        print("Starting new trials file", e)
+        logger.error("Starting new trials file", exc_info=True)
 
     best = None
     i = None
     for i in range(num_trials):
         # run optimazation once
-        # ToDo: check if this ist true,and if, if it yields the same result as do the optimazation at once
         best = fmin(
             objective,
-            space=space,
+            space=hyper_param_space,
             algo=tpe.suggest,  # for tpe also is possible algo=partial(tpe.suggest, n_startup_jobs=1)
             max_evals=(i + 1),
             trials=trials,
+            verbose=0,
+            show_progressbar=False,
         )
         # Save after each optimazation step
         save_trials()
@@ -194,7 +206,7 @@ def main() -> None:
 
     # optimazation finished
     summarize_trials()
-    print(f"{i+1} Trials => Best result was: {best}")
+    logger.info(f"{i+1} Trials => Best result was: {best}")
 
 
 def signal_handler(signal, frame) -> None:
@@ -205,7 +217,7 @@ def signal_handler(signal, frame) -> None:
     :return:
     """
     # in case of premature interrruption
-    print("Hyperoptimazation interrupted")
+    logger.warning("Hyperoptimazation interrupted")
     # show and save state
     summarize_trials()
     save_trials()
@@ -215,5 +227,5 @@ def signal_handler(signal, frame) -> None:
 signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == "__main__":
-    print(f"Start Hyperoptimazation: {optimization_name}")
+    logger.info(f"Start Hyperoptimazation: {hyper_opt_name}")
     main()
