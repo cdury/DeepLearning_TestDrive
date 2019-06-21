@@ -43,13 +43,10 @@ from helper.helper_load_data import UCI_HAR_INPUT_SIGNAL_TYPES as INPUT_SIGNAL_T
 from helper.helper_load_data import UCI_HAR_LABELS as LABELS
 
 # Network
-from networks.Base_Supervised_Categorical import (
-    BaseParameters,
-    BaseNN,
-    timing,
-)
+from networks.Base_Supervised_Categorical import BaseParameters, BaseNN, timing
 
 logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
+
 
 class HyperParameters(BaseParameters):
     """ HyperParamters for the neural network

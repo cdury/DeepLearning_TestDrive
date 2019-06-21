@@ -1,6 +1,7 @@
 # general imports
 import os, sys
 import time
+import logging
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -28,21 +29,23 @@ Adam = keras.optimizers.Adam
 # # Utils
 plot_model = keras.utils.plot_model
 
-model_name = "SNN_3_Layer_HAR"
+model_name = os.path.splitext(os.path.basename(__file__))[0]
 
 # helper imports
-from helper_nn.helper_encoding import one_hot
+from helper.helper_encoding import one_hot
 
 ##############################################################################################
 # Parameters
 ##############################################################################################
 # Data
-from helper_nn.helper_load_data import uci_har_dataset_data as data
-from helper_nn.helper_load_data import UCI_HAR_INPUT_SIGNAL_TYPES as INPUT_SIGNAL_TYPES
-from helper_nn.helper_load_data import UCI_HAR_LABELS as LABELS
+from helper.helper_load_data import uci_har_dataset_data as data
+from helper.helper_load_data import UCI_HAR_INPUT_SIGNAL_TYPES as INPUT_SIGNAL_TYPES
+from helper.helper_load_data import UCI_HAR_LABELS as LABELS
 
 # Network
 from networks.Base_Supervised_Categorical import BaseParameters, BaseNN, timing
+
+logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
 
 class HyperParameters(BaseParameters):
@@ -50,9 +53,9 @@ class HyperParameters(BaseParameters):
 
     """
 
-    def __init__(self, model_name, loglevel):
+    def __init__(self, model_name, loglevel, parent_name=None):
         # Process parameter
-        super().__init__(model_name, loglevel)
+        super().__init__(model_name, loglevel, parent_name)
         # Filesystem & Paths
         # # data
         self.data_dir = self.data_path
@@ -62,22 +65,20 @@ class HyperParameters(BaseParameters):
         self.colums_to_use = [
             0,
             1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
+            # 2,
+            # 3,
+            # 4,
+            # 5,
+            # 6,
+            # 7,
+            # 8,
         ]  # List of data columns to be used
         self.colum_names = INPUT_SIGNAL_TYPES
         self.labels = LABELS  # Labels of th categorizations
 
         # # Modell (Hyperparamters)
-        self.n_hidden_1 = 100  # Num of features in the first hidden layer
-        self.n_hidden_2 = 50  # Num of features in the first hidden layer
-        self.n_hidden_3 = 25  # Num of features in the first hidden layer
-        self.n_hidden_4 = 1  # Num of features in the first hidden layer
+        self.n_hidden_1 = 4  # Num of hidden features in the first lstm layer
+
 
         self.init_kernel = "random_normal"  # "he_normal", 'random_normal'
         self.activation_hidden = "relu"
@@ -137,25 +138,26 @@ class LSTMLayerN(BaseNN):
     @timing
     def define_model(self, input_shape, output_shape) -> Model:
         # Input (number of inputs)
-        n_input = input_shape[1]
-        self.parameter.n_input = n_input
+        n_timesteps = input_shape[1]
+        n_input = input_shape[2]
+        self.parameter.n_input = (n_timesteps,n_input)
         # Output (number of classes)
         n_classes = output_shape[1]
         self.parameter.n_classes = n_classes
 
         # Start defining the input tensor:
-        input_layer = Input((128, 9))
+        input_layer = Input((n_timesteps,n_input)) #(time steps, measurments per time step)
 
         # create the layers and pass them the input tensor to get the output tensor:
         layer_1 = LSTM(
-            units=4,  # self.parameter.n_hidden_2, # hidden (=output) neurons
+            units=self.parameter.n_hidden_1, # hidden (=output) neurons
             unit_forget_bias=True,
             kernel_initializer=self.parameter.init_kernel,
             # dropout=0.2,
             # recurrent_dropout=0.2,
-            # input_shape=(128, 9), #(time steps, measurments per time step)
             return_sequences=False,
             kernel_regularizer=l2(self.parameter.lambda_loss_amount),
+            recurrent_regularizer=l2(self.parameter.lambda_loss_amount),
         )(input_layer)
 
         out_layer = Dense(
@@ -184,7 +186,7 @@ class LSTMLayerN(BaseNN):
         model.compile(
             loss=loss_fn, optimizer=optimizer_fn, metrics=[self.parameter.metric]
         )
-        if self.parameter.loglevel == 0:
+        if self.parameter.loglevel <= logging.INFO:
             model.summary()
         if self.parameter.show_graphs:
             plot_model(
@@ -206,7 +208,7 @@ class LSTMLayerN(BaseNN):
 
         # Callbacks
         tensorboard, checkpoint, earlyterm = self.get_callbacks()
-        used_callbacks = [tensorboard, earlyterm]
+        used_callbacks = [tensorboard]
 
         # Training
         if self.parameter.batch_size > 0:
@@ -228,7 +230,7 @@ class LSTMLayerN(BaseNN):
                 verbose=self.parameter.fitting_verbosity,
                 callbacks=used_callbacks,
             )
-        print("Training Finished!")
+        logger.info("Training Finished!")
         return history
 
     def setup_and_train_network(self):
@@ -266,9 +268,13 @@ class LSTMLayerN(BaseNN):
 if __name__ == "__main__":
     from tensorflow.python.client import device_lib
 
-    print("ENVIRONMENT")
-    print(device_lib.list_local_devices())
-    print("")
-    hyperparameters = HyperParameters(model_name=model_name, loglevel=0)
+    logger.debug("ENVIRONMENT")
+    for device in device_lib.list_local_devices():
+        logger.debug(
+            f"{device.name}:{device.device_type} with memory {device.memory_limit}"
+        )
+        logger.debug(f" {device.physical_device_desc}")
+
+    hyperparameters = HyperParameters(model_name=model_name, loglevel=logging.DEBUG)
     neural_network = LSTMLayerN(hyperparameters)
     neural_network.setup_and_train_network()
