@@ -116,7 +116,7 @@ class SNNLayerN(BaseNN):
         Tuple[Union[DataFrame, Series, ndarray], ...],
         Tuple[Union[DataFrame, Series, ndarray], ...],
     ]:
-        # Import Boston data
+        # Import HAR data
         x_train, y_train, x_test, y_test = data(self.parameter.colums_to_use)
 
         # # Features

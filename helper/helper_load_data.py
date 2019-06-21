@@ -4,6 +4,8 @@ from random import shuffle
 import numpy as np
 import pandas as pd
 from typing import Union, List
+# keras imports
+from tensorflow.python.keras.api._v2 import keras
 
 # pathes
 HOME_PATH = os.getcwd()
@@ -17,16 +19,9 @@ DATA_PATH = os.path.join("data")
 # #######################################################################################
 MNIST_DATASET_PATH = os.path.join(DATA_PATH, "MNIST")
 MNIST_LABELS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-MNIST_DATASET = None
 
 def mnist_data():
-    # ToDo
-    from tensorflow.examples.tutorials.mnist import input_data
-    global MNIST_DATASET
-    mnist = input_data.read_data_sets(MNIST_DATASET_PATH, one_hot=True)
-    X_train, y_train = mnist.train.next_batch(mnist.train.num_examples)
-    X_test, y_test = mnist.test.next_batch(mnist.test.num_examples)
-    MNIST_DATASET = mnist
+    (X_train, y_train), (X_test, y_test) = keras.datasets.mnist.load_data()
     return X_train, y_train, X_test, y_test
 
 #########################################################################################
