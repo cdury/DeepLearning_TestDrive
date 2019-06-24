@@ -1,9 +1,14 @@
+# general imports
 import os
-import numpy as np
 from random import shuffle
 import numpy as np
 import pandas as pd
+import sklearn.metrics as skm
+from sklearn import preprocessing as skp
+
+# typing imports
 from typing import Union, List
+
 # keras imports
 from tensorflow.python.keras.api._v2 import keras
 
@@ -12,17 +17,169 @@ HOME_PATH = os.getcwd()
 DATA_PATH = os.path.join("data")
 #########################################################################################
 #                                                                                       #
+#     EEG Eyes Dataset    (http://archive.ics.uci.edu/ml/datasets/EEG+Eye+State)        #
+# from helper.helper_load_data import eeg_data as data                                  #
+# from helper.helper_load_data import EEG_DATASET_PATH as DATASET_PATH                  #
+# from helper.helper_load_data import EEG_INPUT_SIGNAL_TYPES as INPUT_SIGNAL_TYPES      #
+# from helper.helper_load_data import EEG_LABELS as LABELS                              #
+# #######################################################################################
+# Labels of input columns
+EEG_INPUT_SIGNAL_TYPES = [
+    "AF3",
+    "F7",
+    "F3",
+    "FC5",
+    "T7",
+    "P7",
+    "O1",
+    "O2",
+    "P8",
+    "T8",
+    "FC6",
+    "F4",
+    "F8",
+    "AF4",
+]
+# Output classes to learn how to classify
+EEG_LABELS = ["EyeClosed", "EyeOpen"]
+
+
+def eeg_data(batches):
+    """Numpy Array of input and labels for training and test data
+
+    :param batches: Number of batches
+    :return: X_train, y_train, X_test, y_test
+    """
+
+    def prep_time_data(start, end):
+        X1 = np.expand_dims(X[start:end, :], axis=0)
+        Y1 = y[start:end].reshape(-1, 1)
+        Y1 = np.expand_dims(np.hstack([Y1, 1 - Y1]), axis=0)
+        return X1, Y1
+
+    #
+    ## train-test-splitt:
+    ## define point in time t0 where we split the time series
+    ## train is before t0
+    ## test is after t0
+    t0 = 12000
+    ## ts_length
+    ## timeseries 0-t0 itd aufgeteilt in
+    ## kleinere timeserie der Länge ts_length
+    ## alle ts_length/batches fängt eine neue kleine timeseries an
+    ## d.h. 1.timeseries   0 - 2000 (0 - ts_length)
+    ##      2.timeseries 500 - 2500 (1 * ts_length/batches - (1 * ts_length/batches +ts_length) )
+    ##      ...
+    ts_length = 2000
+    assert ts_length / batches == ts_length // batches, "batches must divide ts_length"
+    #
+    DATASET_PATH = os.path.join(HOME_PATH,DATA_PATH, "EEG")
+    file = r"EEG Eye State.arff"
+    cols = [
+        "AF3",
+        "F7",
+        "F3",
+        "FC5",
+        "T7",
+        "P7",
+        "O1",
+        "O2",
+        "P8",
+        "T8",
+        "FC6",
+        "F4",
+        "F8",
+        "AF4",
+        "eyeDetection",
+    ]
+    data = pd.read_csv(
+        os.path.join(DATASET_PATH, file), names=cols, skiprows=19, index_col=False
+    )
+
+    # PREPARE DATA
+    label = "eyeDetection"
+    X = data[EEG_INPUT_SIGNAL_TYPES].values
+    y = data[label].values
+
+    scaler = skp.RobustScaler()
+    scaler.fit(X[:t0, :])
+    X = scaler.transform(X)
+    le = skp.LabelEncoder()
+    y = le.fit_transform(y)
+    ## cut signal at -1 and 1
+    # X = X/2 ## alternative: cut at -2 and 2 and scale
+    idx1 = X > 1
+    idx2 = X < -1
+    X_peaks = np.zeros_like(X)
+    X[idx1] = 1
+    X[idx2] = -1
+    ## and add new columns which indicate if there was a peak
+    X_peaks[idx1] = 1
+    X_peaks[idx2] = -1
+    X = np.hstack([X, X_peaks])
+
+    ## divide dataset into step_size segments,
+    #  each segment corrsesponds to one of the batches
+    n_pred = ts_length  # 2000
+    step_size = ts_length // batches  # 1000
+
+    n_ts = t0 // ts_length - 1
+    first_start = t0 - (n_ts + 1) * ts_length
+    ts_starts = np.array(range(first_start, t0 - step_size - ts_length + 1, step_size))
+    windows = pd.DataFrame(
+        {
+            "batch": list(range(batches)) * n_ts,
+            "start": ts_starts,
+            "end": ts_starts + ts_length,
+        }
+    )
+    ## build training set
+    X_list = []
+    Y_list = []
+    for start in range(first_start, t0 - step_size - ts_length + 1, step_size):
+        X1, Y1 = prep_time_data(start, start + ts_length)
+        X_list.append(X1)
+        Y_list.append(Y1)
+    # put into 3D Tensor (number of small time series, lenght of small time series, inputs)
+    trainX = np.vstack(X_list)
+    trainY = np.vstack(Y_list)
+
+    ## validation set to observe while training
+    X_list = []
+    Y_list = []
+    for i in range(1 - batches, 1):
+        start = t0 + i * step_size
+        X1, Y1 = prep_time_data(start, start + ts_length)
+        X_list.append(X1)
+        Y_list.append(Y1)
+
+    valX = np.vstack(X_list)
+    valY = np.vstack(Y_list)
+
+    ## test set
+    trainX_forPred, trainY_forPred = prep_time_data(
+        t0 - n_pred, t0
+    )  ## used to generate valid state
+    testX, testY = prep_time_data(t0, t0 + n_pred)
+
+    return trainX, trainY, trainX_forPred, trainY_forPred, valX, valY, testX, testY
+
+
+#########################################################################################
+#                                                                                       #
 #                                    MNIST Dataset                                      #
-# from helper.helper_load_data import mnist_data as data                             #
-# from helper.helper_load_data import MNIST_DATASET_PATH as DATASET_PATH             #
-# from helper.helper_load_data import MNIST_LABELS as LABELS                         #
+# from helper.helper_load_data import mnist_data as data                                #
+# from helper.helper_load_data import MNIST_DATASET_PATH as DATASET_PATH                #
+# from helper.helper_load_data import MNIST_LABELS as LABELS                            #
 # #######################################################################################
 MNIST_DATASET_PATH = os.path.join(DATA_PATH, "MNIST")
 MNIST_LABELS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
+
 def mnist_data():
     (X_train, y_train), (X_test, y_test) = keras.datasets.mnist.load_data()
     return X_train, y_train, X_test, y_test
+
 
 #########################################################################################
 #                                                                                       #
@@ -73,17 +230,18 @@ def boston_housing_data():
 
     # Split into train/test
     x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=0.25, random_state=42)
+        x, y, test_size=0.25, random_state=42
+    )
 
-    return x_train, y_train, x_test,  y_test
+    return x_train, y_train, x_test, y_test
 
 
 #########################################################################################
 #                                                                                       #
 #                                    UCI HAR Dataset                                    #
-# from helper.helper_load_data import uci_har_dataset_data as data                   #
-# from helper.helper_load_data import UCI_HAR_INPUT_SIGNAL_TYPESas INPUT_SIGNAL_TYPES#
-# from helper.helper_load_data import UCI_HAR_LABELS as LABELS                       #
+# from helper.helper_load_data import uci_har_dataset_data as data                      #
+# from helper.helper_load_data import UCI_HAR_INPUT_SIGNAL_TYPES as INPUT_SIGNAL_TYPES  #
+# from helper.helper_load_data import UCI_HAR_LABELS as LABELS                          #
 # #######################################################################################
 # Labels of input columns
 UCI_HAR_INPUT_SIGNAL_TYPES = [

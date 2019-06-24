@@ -23,7 +23,9 @@ pandas
 #plotly-orca # conda install -c plotly plotly-orca
 #bokeh
 matplotlib
+seaborn
 pydot
+pillow
 #holoviews
 graphviz
 #python-graphviz

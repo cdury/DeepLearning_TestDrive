@@ -130,13 +130,16 @@ class BaseParameters:
         self.monitor = "val_loss"  # "val_acc"
         self.mode = "auto"  # ""min"  # "max"
         self.patience = 10
-        self.batch_size = 0
-        self.epochs = 1000
-
+        self.batch_size = 4
+        self.epochs = 10#200
+        # # Results
+        self.trained_epochs = 0
 
 class BaseNN:
     def __init__(self, hyperparameter):
         self.parameter: BaseParameters = hyperparameter
+        self.model = None
+        self.train_data = None
         self.test_data = None
         self.validation_data = None
 
@@ -207,8 +210,20 @@ class BaseNN:
         return final_metrics
 
     @timing
+    def calc_categorical_accuracy(self, model, test_data):
+        final_metrics = {}
+        x_test, y_test = test_data
+        score = model.evaluate(x_test, y_test, verbose=self.parameter.eval_verbosity)
+        for name, value in zip(model.metrics_names, score):
+            logger.info(f"{name}: {value}")
+            final_metrics[name] = value
+        return final_metrics
+
+
+    @timing
     def is_vs_should_categorical(self, model, test_data):
         x_test, y_test = test_data
+        index = len(y_test.shape)-1
         predictions = model.predict(x_test)
-        given = y_test.argmax(1)
-        return predictions.argmax(1), given
+        given = y_test.argmax(index)
+        return predictions.argmax(index), given
