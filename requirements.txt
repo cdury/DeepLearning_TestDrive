@@ -8,7 +8,7 @@ numpy
 scipy
 #-#statsmodels
 hyperopt # conda install -c conda-forge hyperopt
-#-#librosa # pip install librosa
+librosa # pip install librosa
 #-#pomegranate
 #-#pymdptoolbox # pip install pymdptoolbox
 

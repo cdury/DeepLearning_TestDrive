@@ -1,8 +1,10 @@
 import os
 import logging
-from functools import wraps
-from time import process_time, perf_counter, strftime, gmtime
+import numpy as np
+
+from time import  strftime, gmtime
 from logging.config import dictConfig
+from categorical.helper.profiling import timing
 
 # typing imports
 from typing import Tuple, List, Any, Union, Optional
@@ -36,25 +38,8 @@ dictConfig(
 logger = logging.getLogger("Base_Supervised_Categorical")
 
 
-def timing(method):
-    @wraps(method)
-    def wrap(*args, **kw):
-        wall_ts = perf_counter()
-        pu_ts = process_time()
-        return_value = method(*args, **kw)
-        wall_te = perf_counter()
-        pu_te = process_time()
-        logger.debug(
-            f"Method:{method.__name__}"
-            f" took {wall_te-wall_ts:2.4f}sec ({pu_te-pu_ts:2.4f}sec)"
-        )
-        return return_value
-
-    return wrap
-
-
 class BaseParameters:
-    def __init__(self, model_name, loglevel, parent_name=None):
+    def __init__(self, model_name, dir_name, loglevel, parent_name=None):
         # Technical & HyperOpt
         self.model_name = model_name
         self.parent_name = (
@@ -76,7 +61,7 @@ class BaseParameters:
 
         # # model
         self.model_path = os.path.join(
-            home_path, "models", parent_name if parent_name else model_name
+            home_path, "categorical", dir_name, parent_name if parent_name else '' # model_name
         )
         self.model_dir = os.path.join(self.model_path, base_ts_name)
         if not os.path.isdir(self.model_dir):
@@ -115,7 +100,7 @@ class BaseParameters:
         # # Data
 
         # # Modell (set in code)
-        self.n_input = None  # Set in code
+        self.input_shape = None  # Set in code
         self.n_classes = None  # Number of classification classes (set in code)
 
         # # Callbacks
@@ -130,10 +115,11 @@ class BaseParameters:
         self.monitor = "val_loss"  # "val_acc"
         self.mode = "auto"  # ""min"  # "max"
         self.patience = 10
-        self.batch_size = 4
-        self.epochs = 10#200
         # # Results
         self.trained_epochs = 0
+        # # Placeholder (need to be set in child object)
+        self.batch_size = None
+        self.epochs = None
 
 class BaseNN:
     def __init__(self, hyperparameter):
@@ -200,30 +186,27 @@ class BaseNN:
         return tensorboard, checkpoint, earlyterm
 
     @timing
-    def calc_categorical_accuracy(self, model, test_data):
+    def calc_categorical_accuracy(self, model, non_train_data):
         final_metrics = {}
-        x_test, y_test = test_data
-        score = model.evaluate(x_test, y_test, verbose=self.parameter.eval_verbosity)
+        x, y = non_train_data
+        score = model.evaluate(x, y, verbose=self.parameter.eval_verbosity)
         for name, value in zip(model.metrics_names, score):
             logger.info(f"{name}: {value}")
             final_metrics[name] = value
-        return final_metrics
 
-    @timing
-    def calc_categorical_accuracy(self, model, test_data):
-        final_metrics = {}
-        x_test, y_test = test_data
-        score = model.evaluate(x_test, y_test, verbose=self.parameter.eval_verbosity)
-        for name, value in zip(model.metrics_names, score):
-            logger.info(f"{name}: {value}")
-            final_metrics[name] = value
+        # Accuracy calculation by hand (same result than accuracy of model.evaluate)
+        # import sklearn.metrics as skm
+        # y_pred = model.predict(x)
+        # final_metrics['sklearn_acc'] = skm.accuracy_score(y.argmax(axis=1), y_pred.argmax(axis=1))
+
         return final_metrics
 
 
     @timing
-    def is_vs_should_categorical(self, model, test_data):
-        x_test, y_test = test_data
-        index = len(y_test.shape)-1
-        predictions = model.predict(x_test)
-        given = y_test.argmax(index)
-        return predictions.argmax(index), given
+    def is_vs_should_categorical(self, model, non_train_data):
+        x, y = non_train_data
+        index = len(y.shape)-1
+        predictions = model.predict(x)
+        given = np.asarray(y.argmax(index)).reshape(-1)
+        predictions = np.asarray(predictions.argmax(index)).reshape(-1)
+        return predictions, given

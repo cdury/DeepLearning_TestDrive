@@ -20,24 +20,11 @@ import logging
 from typing import Any, Dict, Tuple, Union, Optional
 
 # helper import
-from helper.helper_graphical import category_evaluation
+from categorical.helper.graphical import category_evaluation
 
 # model import
-# from networks.SNN_K_nLayer_MNIST import SNNLayerN as NeuralNetwork
-# from networks.SNN_K_nLayer_MNIST import HyperParameters
-# from networks.SNN_K_nLayer_MNIST import model_name
+import categorical.Motionsense_CNN1d.NeuralNetwork as Network
 
-# from networks.SNN_K_nLayer_BOSTON import SNNLayerN as NeuralNetwork
-# from networks.SNN_K_nLayer_BOSTON import HyperParameters
-# from networks.SNN_K_nLayer_BOSTON import model_name
-
-from networks.SNN_HAR_nLayer import SNNLayerN as NeuralNetwork
-from networks.SNN_HAR_nLayer import HyperParameters
-from networks.SNN_HAR_nLayer import model_name
-
-# from networks.LSTM_K_nLayer_HAR import LSTMLayerN as NeuralNetwork
-# from networks.LSTM_K_nLayer_HAR import HyperParameters
-# from networks.LSTM_K_nLayer_HAR import model_name
 
 ##############################################################################################
 # Free to code
@@ -50,8 +37,9 @@ def neural_net(
     :param hyperparameter:
     :return:
     """
+
     # Init
-    neural_network = NeuralNetwork(hyperparameter)
+    neural_network = Network.DeepLearning(hyperparameter)
 
     # START
     # # model
@@ -74,7 +62,7 @@ def neural_net(
     # # additional_dict
     additional_dict = {}
     additional_dict["stored_model"] = neural_network.parameter.model_name
-    labels = neural_network.parameter.labels
+    labels = neural_network.parameter.label_categories
     additional_dict["labels"] = labels
     predictions, given = label_vectors
     additional_dict["given"] = given
@@ -129,5 +117,9 @@ def run_and_evaluate(hyperparameter) -> None:
 
 
 if __name__ == "__main__":
-    hyperparameters = HyperParameters(model_name=model_name, loglevel=logging.ERROR)
+    # Define Hyperparameters
+    hyperparameters = Network.HyperParameters(model_name=Network.model_name, loglevel=logging.ERROR)
     run_and_evaluate(hyperparameters)
+
+
+

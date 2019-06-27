@@ -33,17 +33,18 @@ from hyperopt import Trials
 from hyperopt import STATUS_OK, STATUS_FAIL
 
 # parameter import
-from hyperParams_HAR_SNN import (
+from categorical.Motionsense_CNN1d.hyperParams import (
     hyper_opt_name,
+    model_name,
     num_trials,
-    HyperParameters,
+    Network,
     hyper_param_space,
     run_and_get_error,
     load_hyper_params_from_pickle,
 )
 
 # technicalities
-HYPER_PATH = os.path.join("hyperopt")
+HYPER_PATH = os.path.join(os.getcwd(),"categorical",model_name)
 HYPER_BASE = (
     hyper_opt_name + "_" + time.strftime("%y%m%d%H%M", time.gmtime())
 )  # Unique name of a hyperoptimization run
@@ -77,7 +78,7 @@ def objective(args: Dict[str, Any]) -> Dict[str, Any]:
     """
     logger.info(f"Trial {trials.tids[-1]} : {args}")
     # Instantiate hyperparameters
-    hyperparameters = HyperParameters(
+    hyperparameters = Network.HyperParameters(
         model_name=f"{hyper_opt_name}_{trials.tids[-1]:04}",
         loglevel=logging.ERROR,
         parent_name=HYPER_BASE,
