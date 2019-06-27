@@ -39,6 +39,9 @@ l2 = keras.regularizers.l2
 # # Optimizer
 Adam = keras.optimizers.Adam
 Adadelta = keras.optimizers.Adadelta
+RMSprop = keras.optimizers.RMSprop
+Nadam = keras.optimizers.Nadam
+
 # # Utils
 plot_model = keras.utils.plot_model
 
@@ -74,11 +77,6 @@ class NNParameters(BaseParameters):
         self.colum_names = None
         self.labels = None  # Labels of th categorizations
         # # Modell (Hyperparamters)
-        self.n_conv_1 = 32
-        self.n_conv_1_kernel = 3
-        self.n_conv_2 = 64
-        self.n_conv_2_kernel = 3
-        self.dropout = 0.2
         self.init_kernel = "random_normal"  # "he_normal", 'random_normal'
         self.activation_hidden = "relu"
         self.activation_output = "softmax"
@@ -116,39 +114,17 @@ class NNDefinition(BaseNN):
 
         # Start defining the input tensor:
         model = Sequential()
+        # model.add(GaussianNoise(0.3))
         model.add(
-            Conv1D(
-                filters=self.parameter.n_conv_1,
-                kernel_size=self.parameter.n_conv_1_kernel,
-                activation=self.parameter.activation_hidden,
-                kernel_initializer=self.parameter.init_kernel,
+            TimeDistributed(
+                Dense(n_input * 2, activation=self.parameter.activation_hidden),
                 input_shape=(n_timesteps, n_input),
-                data_format="channels_last",
             )
         )
-        # model.add(Conv1D(32, 3, activation='relu'))
-        model.add(MaxPooling1D(3))
-        # model.add(Dropout(self.parameter.dropout))
-        # model.add(GaussianNoise(1))
-        model.add(
-            Conv1D(
-                filters=self.parameter.n_conv_2,
-                kernel_size=self.parameter.n_conv_2_kernel,
-                activation=self.parameter.activation_hidden,
-                kernel_initializer=self.parameter.init_kernel,
-            )
-        )
-        # model.add(Conv1D(64, 3, activation='relu'))
+        model.add(GRU(n_input, return_sequences=True))
         model.add(GlobalAveragePooling1D())
-        # model.add(Dropout(self.parameter.dropout))
-        # model.add(GaussianNoise(0.2))
-        model.add(
-            Dense(
-                self.parameter.n_classes,
-                activation=self.parameter.activation_output,
-                kernel_initializer=self.parameter.init_kernel,
-            )
-        )
+        # model.add(GaussianNoise(0.3))
+        model.add(Dense(n_classes, activation="softmax"))
 
         # Define the loss function
         # loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits(
@@ -163,9 +139,23 @@ class NNDefinition(BaseNN):
             epsilon=None,
             decay=self.parameter.decay,
         )
-        # optimizer_fn = tf.train.AdamOptimizer(
+        # optimizer_fn = AdamOptimizer(
         #     learning_rate=self.parameter.learning_rate
         # )
+        # optimizer_fn = RMSprop(
+        #     lr=self.parameter.learning_rate,
+        #     rho=self.parameter.rho,
+        #     epsilon=None,
+        #     decay=0.0,
+        # )
+        # optimizer_fn = Nadam(
+        #     lr=self.parameter.learning_rate,
+        #     beta_1=self.parameter.beta_1,  # 0.9,
+        #     beta_2=self.parameter.beta_2,  # 0.999,
+        #     epsilon=None,
+        #     schedule_decay=0.004,
+        # )
+        # optimizer_fn = "adam"
 
         # put all components together
         model.compile(

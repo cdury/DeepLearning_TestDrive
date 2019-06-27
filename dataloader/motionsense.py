@@ -1,5 +1,7 @@
 # This dataloader loads the "motionsense-dataset"
-# http://
+# https://www.kaggle.com/malekzadeh/motionsense-dataset/home
+# and/or
+# https://github.com/mmalekzadeh/motion-sense
 #
 # Usage:
 # from dataloader.motionsense import Loader
