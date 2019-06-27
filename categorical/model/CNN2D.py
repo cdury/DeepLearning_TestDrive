@@ -29,8 +29,12 @@ GaussianNoise = keras.layers.GaussianNoise
 Conv1D = keras.layers.Conv1D
 Convolution1D = keras.layers.Convolution1D
 MaxPooling1D = keras.layers.MaxPooling1D
+MaxPooling2D = keras.layers.MaxPooling2D
 GlobalAveragePooling1D = keras.layers.GlobalAveragePooling1D
+Convolution2D = keras.layers.Convolution2D
 TimeDistributed = keras.layers.TimeDistributed
+Dropout  = keras.layers.Dropout
+Flatten  = keras.layers.Flatten
 # # Model
 Model = keras.models.Model
 Sequential = keras.models.Sequential
@@ -74,17 +78,17 @@ class NNParameters(BaseParameters):
         self.colum_names = None
         self.labels = None  # Labels of th categorizations
         # # Modell (Hyperparamters)
-        self.n_conv_1 = 16
-        self.n_conv_1_kernel = 3
-        self.n_conv_2 = 32
-        self.n_conv_2_kernel = 3
-        self.n_lstm_1 = 10
+        self.n_conv_1 = 32
+        self.n_conv_1_kernel = (3,3)
+        self.n_conv_1_pooling = (2,2)
+        self.n_hidden_2 = 32
+        self.dropout = 0.1
         self.init_kernel = "random_normal"  # "he_normal", 'random_normal'
         self.activation_hidden = "relu"
         self.activation_output = "softmax"
 
         # # Optimizer (Hyperparamters)
-        self.learning_rate = 2.5
+        self.learning_rate = 1.0
         self.rho = 0.95
         self.decay = 0.0
         self.lambda_loss_amount = 0.005
@@ -107,10 +111,10 @@ class NNDefinition(BaseNN):
     @timing
     def define_model(self, input_shape, output_shape) -> Model:
         # Input (number of inputs)
-        n_fft_timesteps = input_shape[1]
-        n_freq = input_shape[2]
+        dim_pic_x = input_shape[1]
+        dim_pic_y = input_shape[2]
         n_input = input_shape[3]
-        self.parameter.input_shape = (n_fft_timesteps, n_freq, n_input)
+        self.parameter.input_shape = (dim_pic_x, dim_pic_y, n_input)
         # Output (number of classes)
         n_classes = output_shape[1]
         self.parameter.n_classes = n_classes
@@ -118,29 +122,34 @@ class NNDefinition(BaseNN):
         # Start defining the input tensor:
         model = Sequential()
         model.add(
-            TimeDistributed(
-                Convolution1D(
-                    filters=self.parameter.n_conv_1,
-                    kernel_size=self.parameter.n_conv_1_kernel,
-                    activation=self.parameter.activation_hidden,
-                    kernel_initializer=self.parameter.init_kernel,
-                ),
-                input_shape=(n_fft_timesteps, n_freq, n_input),
+            Convolution2D(
+                filters=self.parameter.n_conv_1,
+                kernel_size=self.parameter.n_conv_1_kernel,
+                activation=self.parameter.activation_hidden,
+                kernel_initializer=self.parameter.init_kernel,
+                input_shape=(dim_pic_x, dim_pic_y, n_input),
+                data_format="channels_last",
             )
         )
-        model.add(TimeDistributed(MaxPooling1D(3)))
+
+        model.add(MaxPooling2D(pool_size=self.parameter.n_conv_1_pooling))
+        model.add(Dropout(self.parameter.dropout))
+        # model.add(GaussianNoise(0.3))
+        # model.add(Convolution2D(32, (3, 3),activation='relu'))
+        # model.add(MaxPooling2D(pool_size=(2,2)))
+        # model.add(Dropout(0.1))
+        # model.add(GaussianNoise(0.1))
+        model.add(Flatten())
         model.add(
-            TimeDistributed(
-                Convolution1D(
-                    filters=self.parameter.n_conv_2,
-                    kernel_size=self.parameter.n_conv_2_kernel,
-                    activation=self.parameter.activation_hidden,
-                )
+            Dense(
+                self.parameter.n_hidden_2,
+                activation=self.parameter.activation_hidden,
+                kernel_initializer=self.parameter.init_kernel,
             )
         )
-        model.add(TimeDistributed(GlobalAveragePooling1D()))
-        model.add(CuDNNGRU(self.parameter.n_lstm_1, return_sequences=True))
-        model.add(GlobalAveragePooling1D())
+        # model.add(LeakyReLU(alpha=0.03))
+        model.add(Dropout(self.parameter.dropout))
+        # model.add(GaussianNoise(0.2))
         model.add(
             Dense(
                 self.parameter.n_classes,
@@ -205,7 +214,7 @@ class NNDefinition(BaseNN):
                 epochs=self.parameter.epochs,
                 verbose=self.parameter.fitting_verbosity,
                 callbacks=used_callbacks,
-                shuffle=self.parameter.shuffle,
+                shuffle=False,
             )
         else:
             history = model.fit(
@@ -216,7 +225,7 @@ class NNDefinition(BaseNN):
                 epochs=self.parameter.epochs,
                 verbose=self.parameter.fitting_verbosity,
                 callbacks=used_callbacks,
-                shuffle=self.parameter.shuffle,
+                shuffle=False,
             )
         self.parameter.trained_epochs = history.epoch[-1] + 1
         logger.info("Training Finished!")
