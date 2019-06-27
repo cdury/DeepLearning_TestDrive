@@ -39,9 +39,6 @@ l2 = keras.regularizers.l2
 # # Optimizer
 Adam = keras.optimizers.Adam
 Adadelta = keras.optimizers.Adadelta
-RMSprop = keras.optimizers.RMSprop
-Nadam = keras.optimizers.Nadam
-
 # # Utils
 plot_model = keras.utils.plot_model
 
@@ -77,16 +74,24 @@ class NNParameters(BaseParameters):
         self.colum_names = None
         self.labels = None  # Labels of th categorizations
         # # Modell (Hyperparamters)
+        self.n_conv_1 = 16
+        self.n_conv_1_kernel = 3
+        self.n_conv_2 = 32
+        self.n_conv_2_kernel = 3
+        self.n_lstm_1 = 10
         self.init_kernel = "random_normal"  # "he_normal", 'random_normal'
         self.activation_hidden = "relu"
         self.activation_output = "softmax"
 
         # # Optimizer (Hyperparamters)
-        self.learning_rate = 1.0
+        self.learning_rate = 2.5
         self.rho = 0.95
         self.decay = 0.0
         self.lambda_loss_amount = 0.005
         self.metric = "accuracy"
+
+        # # Train (Hyperparamters)
+        self.shuffle = True
 
         # END Hyperparameter
 
@@ -105,26 +110,47 @@ class NNDefinition(BaseNN):
     @timing
     def define_model(self, input_shape, output_shape) -> Model:
         # Input (number of inputs)
-        n_timesteps = input_shape[1]
-        n_input = input_shape[2]
-        self.parameter.input_shape = (n_timesteps, n_input)
+        n_fft_timesteps = input_shape[1]
+        n_freq = input_shape[2]
+        n_input = input_shape[3]
+        self.parameter.input_shape = (n_fft_timesteps, n_freq, n_input)
         # Output (number of classes)
         n_classes = output_shape[1]
         self.parameter.n_classes = n_classes
 
         # Start defining the input tensor:
         model = Sequential()
-        # model.add(GaussianNoise(0.3))
         model.add(
             TimeDistributed(
-                Dense(n_input * 2, activation=self.parameter.activation_hidden),
-                input_shape=(n_timesteps, n_input),
+                Convolution1D(
+                    filters=self.parameter.n_conv_1,
+                    kernel_size=self.parameter.n_conv_1_kernel,
+                    activation=self.parameter.activation_hidden,
+                    kernel_initializer=self.parameter.init_kernel,
+                ),
+                input_shape=(n_fft_timesteps, n_freq, n_input),
             )
         )
-        model.add(GRU(n_input, return_sequences=True))
+        model.add(TimeDistributed(MaxPooling1D(3)))
+        model.add(
+            TimeDistributed(
+                Convolution1D(
+                    filters=self.parameter.n_conv_2,
+                    kernel_size=self.parameter.n_conv_2_kernel,
+                    activation=self.parameter.activation_hidden,
+                )
+            )
+        )
+        model.add(TimeDistributed(GlobalAveragePooling1D()))
+        model.add(CuDNNGRU(self.parameter.n_lstm_1, return_sequences=True))
         model.add(GlobalAveragePooling1D())
-        # model.add(GaussianNoise(0.3))
-        model.add(Dense(n_classes, activation="softmax"))
+        model.add(
+            Dense(
+                self.parameter.n_classes,
+                activation=self.parameter.activation_output,
+                kernel_initializer=self.parameter.init_kernel,
+            )
+        )
 
         # Define the loss function
         # loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits(
@@ -139,23 +165,9 @@ class NNDefinition(BaseNN):
             epsilon=None,
             decay=self.parameter.decay,
         )
-        # optimizer_fn = AdamOptimizer(
+        # optimizer_fn = tf.train.AdamOptimizer(
         #     learning_rate=self.parameter.learning_rate
         # )
-        # optimizer_fn = RMSprop(
-        #     lr=self.parameter.learning_rate,
-        #     rho=self.parameter.rho,
-        #     epsilon=None,
-        #     decay=0.0,
-        # )
-        # optimizer_fn = Nadam(
-        #     lr=self.parameter.learning_rate,
-        #     beta_1=self.parameter.beta_1,  # 0.9,
-        #     beta_2=self.parameter.beta_2,  # 0.999,
-        #     epsilon=None,
-        #     schedule_decay=0.004,
-        # )
-        # optimizer_fn = "adam"
 
         # put all components together
         model.compile(
@@ -196,7 +208,7 @@ class NNDefinition(BaseNN):
                 epochs=self.parameter.epochs,
                 verbose=self.parameter.fitting_verbosity,
                 callbacks=used_callbacks,
-                shuffle=False,
+                shuffle=self.parameter.shuffle,
             )
         else:
             history = model.fit(
@@ -207,7 +219,7 @@ class NNDefinition(BaseNN):
                 epochs=self.parameter.epochs,
                 verbose=self.parameter.fitting_verbosity,
                 callbacks=used_callbacks,
-                shuffle=False,
+                shuffle=self.parameter.shuffle,
             )
         self.parameter.trained_epochs = history.epoch[-1] + 1
         logger.info("Training Finished!")
