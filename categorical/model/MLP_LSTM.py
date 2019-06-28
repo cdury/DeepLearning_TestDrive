@@ -65,9 +65,9 @@ class NNParameters(BaseParameters):
 
     """
 
-    def __init__(self, model_name, dir_name, loglevel, parent_name=None):
+    def __init__(self, model_name, dir_path, loglevel, parent_name=None):
         # Process parameter
-        super().__init__(model_name, dir_name, loglevel, parent_name)
+        super().__init__(model_name, dir_path, loglevel, parent_name)
         # Filesystem & Paths
         # # data
         self.data_dir = self.data_path

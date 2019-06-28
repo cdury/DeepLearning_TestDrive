@@ -39,7 +39,7 @@ logger = logging.getLogger("Base_Supervised_Categorical")
 
 
 class BaseParameters:
-    def __init__(self, model_name, dir_name, loglevel, parent_name=None):
+    def __init__(self, model_name, dir_path, loglevel, parent_name=None):
         # Technical & HyperOpt
         self.model_name = model_name
         self.parent_name = (
@@ -61,7 +61,7 @@ class BaseParameters:
 
         # # model
         self.model_path = os.path.join(
-            home_path, "categorical", dir_name, parent_name if parent_name else '' # model_name
+            home_path, "categorical", dir_path, parent_name if parent_name else '' # model_name
         )
         self.model_dir = os.path.join(self.model_path, base_ts_name)
         if not os.path.isdir(self.model_dir):
@@ -186,7 +186,7 @@ class BaseNN:
         return tensorboard, checkpoint, earlyterm
 
     @timing
-    def calc_categorical_accuracy(self, model, non_train_data):
+    def calc_categorical_accuracy(self, model, non_train_data, add_data=None):
         final_metrics = {}
         x, y = non_train_data
         score = model.evaluate(x, y, verbose=self.parameter.eval_verbosity)
