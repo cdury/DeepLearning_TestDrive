@@ -19,9 +19,7 @@ import sys
 import logging
 import time
 import signal
-import numpy as np
 import pickle
-from functools import partial
 from logging.config import dictConfig
 
 # typing imports
@@ -33,7 +31,7 @@ from hyperopt import Trials
 from hyperopt import STATUS_OK, STATUS_FAIL
 
 # parameter import
-from categorical.Motionsense_CNN1d.hyperParams import (
+from categorical.Motionsense.CNN1d.hyperParams import (
     hyper_opt_name,
     model_name,
     num_trials,

@@ -1,6 +1,5 @@
 # general imports
-import os, sys
-import time
+import os
 import copy
 import logging
 from categorical.helper.profiling import timing
@@ -9,11 +8,10 @@ import pandas as pd
 import sklearn.metrics as skm
 from sklearn import preprocessing
 import librosa
-import tensorflow as tf
 import matplotlib.pyplot as plt
 
 # typing imports
-from typing import Tuple, List, Any, Union, Optional
+from typing import Tuple, Union
 from numpy import ndarray
 from pandas import DataFrame, Series
 from scipy.sparse import csr_matrix
@@ -43,13 +41,12 @@ model_name = os.path.split(os.path.dirname(__file__))[1]
 dir_name = model_name
 
 # helper imports
-from categorical.helper.encoding import one_hot
 
 # Network
 import categorical.model.CNN2D as CNN2D
 
 # Data
-from dataloader.motionsense import Loader
+from categorical.Motionsense.motionsense import Loader
 
 logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 

@@ -1,17 +1,12 @@
 # general imports
-import os, sys
-import time
+import os
 import copy
 import logging
 from categorical.helper.profiling import timing
-import numpy as np
 import pandas as pd
-import sklearn.metrics as skm
-import tensorflow as tf
-import matplotlib.pyplot as plt
 
 # typing imports
-from typing import Tuple, List, Any, Union, Optional
+from typing import Tuple, Union
 from numpy import ndarray
 from pandas import DataFrame, Series
 from scipy.sparse import csr_matrix
@@ -41,12 +36,11 @@ model_name = os.path.split(os.path.dirname(__file__))[1]
 dir_name = model_name
 
 # helper imports
-from categorical.helper.encoding import one_hot
 
 # Network
-import categorical.model.Dense_LSTM as Dense_LSTM
+import categorical.model.MLP_LSTM as MLP_LSTM
 # Data
-from dataloader.motionsense import Loader
+from categorical.Motionsense.motionsense import Loader
 
 logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
@@ -56,7 +50,7 @@ logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
 
 
-class HyperParameters(Dense_LSTM.NNParameters):
+class HyperParameters(MLP_LSTM.NNParameters):
     """ HyperParamters for the neural network
 
     """
@@ -95,7 +89,7 @@ class HyperParameters(Dense_LSTM.NNParameters):
 ##############################################################################################
 
 
-class DeepLearning(Dense_LSTM.NNDefinition):
+class DeepLearning(MLP_LSTM.NNDefinition):
     def __init__(self, hyperparameter):
         super().__init__(hyperparameter)
         self.parameter: HyperParameters = hyperparameter

@@ -17,13 +17,13 @@ import gc
 import logging
 
 # typing imports
-from typing import Any, Dict, Tuple, Union, Optional
+from typing import Any, Dict, Tuple, Optional
 
 # helper import
 from categorical.helper.graphical import category_evaluation
 
 # model import
-import categorical.Motionsense_CNN1d.NeuralNetwork as Network
+import categorical.Motionsense.CNN1d.NeuralNetwork as Network
 
 
 ##############################################################################################
