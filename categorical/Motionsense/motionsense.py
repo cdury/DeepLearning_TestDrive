@@ -196,7 +196,7 @@ class Loader:
         y = le.fit_transform(label_df[label].values.reshape(-1, 1))
 
         # # one-hot encode label (into ndarray)
-        # from helper.helper_encoding import one_hot
+        # from _helper.helper_encoding import one_hot
         # y = label_df[label].values #.reshape(-1, 1)
         # y=one_hot(y,len(self.classes[label]))
 

@@ -4,7 +4,7 @@ import numpy as np
 
 from time import  strftime, gmtime
 from logging.config import dictConfig
-from categorical.helper.profiling import timing
+from categorical._helper.profiling import timing
 
 # typing imports
 from typing import Tuple, List, Any, Union, Optional
@@ -59,7 +59,7 @@ class BaseParameters:
         # # data
         self.data_path = os.path.join(home_path, "data")
 
-        # # model
+        # # _model
         self.model_path = os.path.join(
             home_path, "categorical", dir_path, parent_name if parent_name else '' # model_name
         )
@@ -91,7 +91,7 @@ class BaseParameters:
         # https://software.intel.com/en-us/mkl-linux-developer-guide-dynamically-selecting-the-interface-and-threading-layer
         # os.environ["MKL_THREADING_LAYER"] = 'GNU' # "INTEL","SEQUENTIAL","GNU","PGI","TBB"
 
-        # # Keras model
+        # # Keras _model
         self.show_graphs = True
         self.eval_verbosity = 0  # 0: quiet // 1: update_messagse
         self.fitting_verbosity = 2  # 0: quiet // 1: animation // 2: summary
@@ -194,9 +194,9 @@ class BaseNN:
             logger.info(f"{name}: {value}")
             final_metrics[name] = value
 
-        # Accuracy calculation by hand (same result than accuracy of model.evaluate)
+        # Accuracy calculation by hand (same result than accuracy of _model.evaluate)
         # import sklearn.metrics as skm
-        # y_pred = model.predict(x)
+        # y_pred = _model.predict(x)
         # final_metrics['sklearn_acc'] = skm.accuracy_score(y.argmax(axis=1), y_pred.argmax(axis=1))
 
         return final_metrics

@@ -47,15 +47,15 @@ plot_model = keras.utils.plot_model
 
 model_name = os.path.splitext(os.path.basename(__file__))[0]
 
-# helper imports
-from categorical.helper.encoding import one_hot
+# _helper imports
+from categorical._helper.encoding import one_hot
 
 ##############################################################################################
 # Parameters
 ##############################################################################################
 
 # Network
-from categorical.model.Base_Supervised import BaseParameters, BaseNN, timing
+from categorical._model.Base_Supervised import BaseParameters, BaseNN, timing
 
 logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
@@ -77,15 +77,18 @@ class NNParameters(BaseParameters):
         self.colum_names = None
         self.labels = None  # Labels of th categorizations
         # # Modell (Hyperparamters)
+        self.n_hidden_1 = 100  # Num of features in the first hidden layer
+        self.n_hidden_2 = 50  # Num of features in the first hidden layer
+        self.n_hidden_3 = 25  # Num of features in the first hidden layer
+        self.n_hidden_4 = 1  # Num of features in the first hidden layer
+
         self.init_kernel = "random_normal"  # "he_normal", 'random_normal'
         self.activation_hidden = "relu"
         self.activation_output = "softmax"
 
         # # Optimizer (Hyperparamters)
-        self.learning_rate = 1.0
-        self.rho = 0.95
-        self.decay = 0.0
-        self.lambda_loss_amount = 0.005
+        self.learning_rate = 0.001
+        self.lambda_loss_amount = 0.000191
         self.metric = "accuracy"
 
         # END Hyperparameter
@@ -105,43 +108,64 @@ class NNDefinition(BaseNN):
     @timing
     def define_model(self, input_shape, output_shape) -> Model:
         # Input (number of inputs)
-        n_timesteps = input_shape[1]
-        n_input = input_shape[2]
-        self.parameter.input_shape = (n_timesteps, n_input)
+        n_input = input_shape[1]
+        self.parameter.input_shape = n_input
         # Output (number of classes)
         n_classes = output_shape[1]
         self.parameter.n_classes = n_classes
 
         # Start defining the input tensor:
-        model = Sequential()
-        # model.add(GaussianNoise(0.3))
-        model.add(
-            TimeDistributed(
-                Dense(n_input * 2, activation=self.parameter.activation_hidden),
-                input_shape=(n_timesteps, n_input),
-            )
-        )
-        model.add(GRU(n_input, return_sequences=True))
-        model.add(GlobalAveragePooling1D())
-        # model.add(GaussianNoise(0.3))
-        model.add(Dense(n_classes, activation="softmax"))
+        input_layer = Input((n_input,))
+
+        # create the layers and pass them the input tensor to get the output tensor:
+        layer_1 = Dense(
+            units=self.parameter.n_hidden_1,
+            activation=self.parameter.activation_hidden,
+            kernel_regularizer=l2(self.parameter.lambda_loss_amount),
+            kernel_initializer=self.parameter.init_kernel,
+        )(input_layer)
+
+        layer_2 = Dense(
+            units=self.parameter.n_hidden_2,
+            activation=self.parameter.activation_hidden,
+            kernel_regularizer=l2(self.parameter.lambda_loss_amount),
+            kernel_initializer=self.parameter.init_kernel,
+        )(layer_1)
+
+        layer_3 = Dense(
+            units=self.parameter.n_hidden_3,
+            activation=self.parameter.activation_hidden,
+            kernel_regularizer=l2(self.parameter.lambda_loss_amount),
+            kernel_initializer=self.parameter.init_kernel,
+        )(layer_2)
+
+        out_layer = Dense(
+            units=self.parameter.n_classes,
+            activation=self.parameter.activation_output,
+            kernel_initializer=self.parameter.init_kernel,
+            # kernel_regularizer= l2(self.parameter.lambda_loss_amount),
+        )(layer_3)
+
+        # Define the _model's start and end points
+        model = Model(inputs=input_layer, outputs=out_layer)
+
 
         # Define the loss function
-        # loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits(
-        #     logits=y_pred, labels=y_true
-        # )
-        loss_fn = "categorical_crossentropy"
+        loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits(
+            logits=y_pred, labels=y_true
+        )
+        #loss_fn = "categorical_crossentropy"
 
         # Define the optimizer
-        optimizer_fn = Adadelta(
-            lr=self.parameter.learning_rate,
-            rho=self.parameter.rho,
-            epsilon=None,
-            decay=self.parameter.decay,
-        )
-        # optimizer_fn = AdamOptimizer(
-        #     learning_rate=self.parameter.learning_rate
+        # optimizer_fn = Adadelta(
+        #     lr=self.parameter.learning_rate,
+        #     rho=self.parameter.rho,
+        #     epsilon=None,
+        #     decay=self.parameter.decay,
         # )
+        optimizer_fn = Adam(
+            learning_rate=self.parameter.learning_rate
+        )
         # optimizer_fn = RMSprop(
         #     lr=self.parameter.learning_rate,
         #     rho=self.parameter.rho,
@@ -183,7 +207,7 @@ class NNDefinition(BaseNN):
 
         # Callbacks
         tensorboard, checkpoint, earlyterm = self.get_callbacks()
-        used_callbacks = [tensorboard]
+        used_callbacks = [tensorboard, earlyterm]
 
         # Training
         if self.parameter.batch_size > 0:
@@ -196,7 +220,6 @@ class NNDefinition(BaseNN):
                 epochs=self.parameter.epochs,
                 verbose=self.parameter.fitting_verbosity,
                 callbacks=used_callbacks,
-                shuffle=False,
             )
         else:
             history = model.fit(
@@ -207,7 +230,6 @@ class NNDefinition(BaseNN):
                 epochs=self.parameter.epochs,
                 verbose=self.parameter.fitting_verbosity,
                 callbacks=used_callbacks,
-                shuffle=False,
             )
         self.parameter.trained_epochs = history.epoch[-1] + 1
         logger.info("Training Finished!")

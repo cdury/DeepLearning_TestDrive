@@ -48,15 +48,15 @@ plot_model = keras.utils.plot_model
 
 model_name = os.path.splitext(os.path.basename(__file__))[0]
 
-# helper imports
-from categorical.helper.encoding import one_hot
+# _helper imports
+from categorical._helper.encoding import one_hot
 
 ##############################################################################################
 # Parameters
 ##############################################################################################
 
 # Network
-from categorical.model.Base_Supervised import BaseParameters, BaseNN, timing
+from categorical._model.Base_Supervised import BaseParameters, BaseNN, timing
 
 logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
@@ -134,11 +134,11 @@ class NNDefinition(BaseNN):
 
         model.add(MaxPooling2D(pool_size=self.parameter.n_conv_1_pooling))
         model.add(Dropout(self.parameter.dropout))
-        # model.add(GaussianNoise(0.3))
-        # model.add(Convolution2D(32, (3, 3),activation='relu'))
-        # model.add(MaxPooling2D(pool_size=(2,2)))
-        # model.add(Dropout(0.1))
-        # model.add(GaussianNoise(0.1))
+        # _model.add(GaussianNoise(0.3))
+        # _model.add(Convolution2D(32, (3, 3),activation='relu'))
+        # _model.add(MaxPooling2D(pool_size=(2,2)))
+        # _model.add(Dropout(0.1))
+        # _model.add(GaussianNoise(0.1))
         model.add(Flatten())
         model.add(
             Dense(
@@ -147,9 +147,9 @@ class NNDefinition(BaseNN):
                 kernel_initializer=self.parameter.init_kernel,
             )
         )
-        # model.add(LeakyReLU(alpha=0.03))
+        # _model.add(LeakyReLU(alpha=0.03))
         model.add(Dropout(self.parameter.dropout))
-        # model.add(GaussianNoise(0.2))
+        # _model.add(GaussianNoise(0.2))
         model.add(
             Dense(
                 self.parameter.n_classes,

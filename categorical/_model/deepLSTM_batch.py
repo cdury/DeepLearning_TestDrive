@@ -48,15 +48,15 @@ plot_model = keras.utils.plot_model
 
 model_name = os.path.splitext(os.path.basename(__file__))[0]
 
-# helper imports
-from categorical.helper.encoding import one_hot
+# _helper imports
+from categorical._helper.encoding import one_hot
 
 ##############################################################################################
 # Parameters
 ##############################################################################################
 
 # Network
-from categorical.model.Base_Supervised import BaseParameters, BaseNN, timing
+from categorical._model.Base_Supervised import BaseParameters, BaseNN, timing
 
 logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 

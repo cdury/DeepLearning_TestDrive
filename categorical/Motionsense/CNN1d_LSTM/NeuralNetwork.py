@@ -2,7 +2,7 @@
 import os
 import copy
 import logging
-from categorical.helper.profiling import timing
+from categorical._helper.profiling import timing
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing
@@ -36,14 +36,14 @@ Adadelta = keras.optimizers.Adadelta
 plot_model = keras.utils.plot_model
 
 dir_name = os.path.split(os.path.split(os.path.dirname(__file__))[0])[1]
-sub_dir_name = model_name = os.path.split(os.path.dirname(__file__))[1]
+sub_dir_name =  os.path.split(os.path.dirname(__file__))[1]
 model_name = dir_name + "_" + sub_dir_name
 dir_path = os.path.join(dir_name,sub_dir_name)
 
-# helper imports
+# _helper imports
 
 # Network
-import categorical.model.CNN1D_LSTM as CNN1D_LSTM
+import categorical._model.CNN1D_LSTM as CNN1D_LSTM
 
 # Data
 from categorical.Motionsense.motionsense import Loader
@@ -62,7 +62,7 @@ class HyperParameters(CNN1D_LSTM.NNParameters):
 
     def __init__(self, model_name, loglevel, parent_name=None):
         # Process parameter
-        super().__init__(model_name, dir_name, loglevel, parent_name)
+        super().__init__(model_name, dir_path, loglevel, parent_name)
         # Loader
         loader = Loader()
         # # Data
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     hyperparameters = HyperParameters(model_name=model_name, loglevel=logging.DEBUG)
     # Setup Model
     neural_network = DeepLearning(hyperparameters)
-    # Train model
+    # Train _model
     neural_network.setup_and_train_network()
     # Do more stuff
     # neural_network.train_network(100)

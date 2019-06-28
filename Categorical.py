@@ -4,7 +4,7 @@
 #     - Needs to import NeuralNetwork py-file with:
 #         Functions:
 #           x_train, y_train, x_test, y_test = data(hyperparameter)
-#           model  = define_model(*,hyperparameter)
+#           _model  = define_model(*,hyperparameter)
 #           train_losses, train_accuracies, test_losses, test_accuracies = train_network(*,hyperparameter)
 #         NeuralNetwork Output:
 #           Categorical
@@ -19,10 +19,10 @@ import logging
 # typing imports
 from typing import Any, Dict, Tuple, Optional
 
-# helper import
-from categorical.helper.graphical import category_evaluation
+# _helper import
+from categorical._helper.graphical import category_evaluation
 
-# model import
+# _model import
 import categorical.Motionsense.CNN1d.NeuralNetwork as Network
 
 
@@ -42,7 +42,7 @@ def neural_net(
     neural_network = Network.DeepLearning(hyperparameter)
 
     # START
-    # # model
+    # # _model
     model, final_metrics, label_vectors, history = (
         neural_network.setup_and_train_network()
     )

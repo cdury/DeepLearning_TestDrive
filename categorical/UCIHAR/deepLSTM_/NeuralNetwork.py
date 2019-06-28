@@ -44,7 +44,7 @@ dir_path = os.path.join(dir_name, sub_dir_name)
 # _helper imports
 
 # Network
-import categorical._model.MLP as MLP
+import categorical._model.deepLSTM_ as deepLSTM
 
 # Data
 from categorical.UCIHAR.uci_har import Loader
@@ -56,7 +56,7 @@ logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 ##############################################################################################
 
 
-class HyperParameters(MLP.NNParameters):
+class HyperParameters(deepLSTM.NNParameters):
     """ HyperParamters for the neural network
 
     """
@@ -78,13 +78,13 @@ class HyperParameters(MLP.NNParameters):
         self.colums_to_use = [
             0,
             1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
+            #2,
+            #3,
+            #4,
+            #5,
+            #6,
+            #7,
+            #8,
         ]  # List of data columns to be used
         # # Training (Hyperparameters)
         self.batch_size = 100
@@ -101,7 +101,7 @@ class HyperParameters(MLP.NNParameters):
 ##############################################################################################
 
 
-class DeepLearning(MLP.NNDefinition):
+class DeepLearning(deepLSTM.NNDefinition):
     def __init__(self, hyperparameter):
         super().__init__(hyperparameter)
         self.parameter: HyperParameters = hyperparameter
@@ -121,17 +121,17 @@ class DeepLearning(MLP.NNDefinition):
         )
 
         # # Features
-        if len(x_train.shape) > 2:
-            # Flatten Input
-            x_train = x_train.reshape(x_train.shape[0], -1)
-            x_test = x_test.reshape(x_test.shape[0], -1)
-            # (or) Feature Extracion Input
-            # feature_0 = np.mean(x_train, axis=1)
-            # feature_1 = np.std(x_train, axis=1)
-            # x_train = np.concatenate((feature_0, feature_1), axis=1)
-            # feature_0 = np.mean(x_test, axis=1)
-            # feature_1 = np.std(x_test, axis=1)
-            # x_test = np.concatenate((feature_0, feature_1), axis=1)
+        # if len(x_train.shape) > 2:
+        #     # Flatten Input
+        #     x_train = x_train.reshape(x_train.shape[0], -1)
+        #     x_test = x_test.reshape(x_test.shape[0], -1)
+        #     # (or) Feature Extracion Input
+        #     # feature_0 = np.mean(x_train, axis=1)
+        #     # feature_1 = np.std(x_train, axis=1)
+        #     # x_train = np.concatenate((feature_0, feature_1), axis=1)
+        #     # feature_0 = np.mean(x_test, axis=1)
+        #     # feature_1 = np.std(x_test, axis=1)
+        #     # x_test = np.concatenate((feature_0, feature_1), axis=1)
         y_train = one_hot(y_train)
         y_test = one_hot(y_test)
         train_data = x_train, y_train

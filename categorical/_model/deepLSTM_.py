@@ -29,8 +29,12 @@ GaussianNoise = keras.layers.GaussianNoise
 Conv1D = keras.layers.Conv1D
 Convolution1D = keras.layers.Convolution1D
 MaxPooling1D = keras.layers.MaxPooling1D
+MaxPooling2D = keras.layers.MaxPooling2D
 GlobalAveragePooling1D = keras.layers.GlobalAveragePooling1D
+Convolution2D = keras.layers.Convolution2D
 TimeDistributed = keras.layers.TimeDistributed
+Dropout = keras.layers.Dropout
+Flatten = keras.layers.Flatten
 # # Model
 Model = keras.models.Model
 Sequential = keras.models.Sequential
@@ -44,15 +48,15 @@ plot_model = keras.utils.plot_model
 
 model_name = os.path.splitext(os.path.basename(__file__))[0]
 
-# helper imports
-from categorical.helper.encoding import one_hot
+# _helper imports
+from categorical._helper.encoding import one_hot
 
 ##############################################################################################
 # Parameters
 ##############################################################################################
 
 # Network
-from categorical.model.Base_Supervised import BaseParameters, BaseNN, timing
+from categorical._model.Base_Supervised import BaseParameters, BaseNN, timing
 
 logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
@@ -74,17 +78,16 @@ class NNParameters(BaseParameters):
         self.colum_names = None
         self.labels = None  # Labels of th categorizations
         # # Modell (Hyperparamters)
-        self.n_conv_1 = 16
-        self.n_conv_1_kernel = 3
-        self.n_conv_2 = 32
-        self.n_conv_2_kernel = 3
-        self.n_lstm_1 = 10
+        self.n_hidden = 4  # Num of hidden features in the first lstm layer
+        self.n_middle = 12  # Num of hidden features in the second lstm layer
+
+        self.dropout = 0.2
         self.init_kernel = "random_normal"  # "he_normal", 'random_normal'
         self.activation_hidden = "relu"
         self.activation_output = "softmax"
 
         # # Optimizer (Hyperparamters)
-        self.learning_rate = 2.5
+        self.learning_rate = 1.0
         self.rho = 0.95
         self.decay = 0.0
         self.lambda_loss_amount = 0.005
@@ -107,64 +110,80 @@ class NNDefinition(BaseNN):
     @timing
     def define_model(self, input_shape, output_shape) -> Model:
         # Input (number of inputs)
-        n_fft_timesteps = input_shape[1]
-        n_freq = input_shape[2]
-        n_input = input_shape[3]
-        self.parameter.input_shape = (n_fft_timesteps, n_freq, n_input)
+        n_timesteps = input_shape[1]
+        n_input = input_shape[2]
+        self.parameter.input_shape = (n_timesteps, n_input)
         # Output (number of classes)
         n_classes = output_shape[1]
         self.parameter.n_classes = n_classes
 
         # Start defining the input tensor:
-        model = Sequential()
-        model.add(
-            TimeDistributed(
-                Convolution1D(
-                    filters=self.parameter.n_conv_1,
-                    kernel_size=self.parameter.n_conv_1_kernel,
-                    activation=self.parameter.activation_hidden,
-                    kernel_initializer=self.parameter.init_kernel,
-                ),
-                input_shape=(n_fft_timesteps, n_freq, n_input),
-            )
-        )
-        model.add(TimeDistributed(MaxPooling1D(3)))
-        model.add(
-            TimeDistributed(
-                Convolution1D(
-                    filters=self.parameter.n_conv_2,
-                    kernel_size=self.parameter.n_conv_2_kernel,
-                    activation=self.parameter.activation_hidden,
-                )
-            )
-        )
-        model.add(TimeDistributed(GlobalAveragePooling1D()))
-        model.add(CuDNNGRU(self.parameter.n_lstm_1, return_sequences=True))
-        model.add(GlobalAveragePooling1D())
-        model.add(
-            Dense(
-                self.parameter.n_classes,
-                activation=self.parameter.activation_output,
-                kernel_initializer=self.parameter.init_kernel,
-            )
-        )
+        input_layer = Input((n_timesteps,n_input)) #(time steps, measurments per time step)
+        feature_input = Input((2*n_input,))        # (Average,StdDev) of each inpit (measurement series)
+
+        # create the layers and pass them the input tensor to get the output tensor:
+        layer_1 = LSTM(
+            units=self.parameter.n_hidden, # hidden (=output) neurons
+            unit_forget_bias=True,
+            kernel_initializer=self.parameter.init_kernel,
+            # dropout=0.2,
+            # recurrent_dropout=0.2,
+            return_sequences=False,
+            kernel_regularizer=l2(self.parameter.lambda_loss_amount),
+            recurrent_regularizer=l2(self.parameter.lambda_loss_amount),
+        )(input_layer)
+
+
+        layer_2 = LSTM(
+            units=self.parameter.n_middle, # hidden (=output) neurons
+            unit_forget_bias=True,
+            kernel_initializer=self.parameter.init_kernel,
+            # dropout=0.2,
+            # recurrent_dropout=0.2,
+            return_sequences=False,
+            kernel_regularizer=l2(self.parameter.lambda_loss_amount),
+            recurrent_regularizer=l2(self.parameter.lambda_loss_amount),
+        )(layer_1)
+
+
+        layer_3 = LSTM(
+            units=self.parameter.n_classes+4, # hidden (=output) neurons
+            unit_forget_bias=True,
+            kernel_initializer=self.parameter.init_kernel,
+            # dropout=0.2,
+            # recurrent_dropout=0.2,
+            return_sequences=False,
+            kernel_regularizer=l2(self.parameter.lambda_loss_amount),
+            recurrent_regularizer=l2(self.parameter.lambda_loss_amount),
+        )(input_layer)
+
+        out_layer = Dense(
+            units=self.parameter.n_classes,
+            activation=self.parameter.activation_output,
+            kernel_initializer=self.parameter.init_kernel,
+            kernel_regularizer=l2(self.parameter.lambda_loss_amount),
+        )(layer_1)
+
+        # Define the _model's start and end points
+        model = Model(inputs=input_layer, outputs=out_layer)
+
 
         # Define the loss function
-        # loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits(
-        #     logits=y_pred, labels=y_true
-        # )
-        loss_fn = "categorical_crossentropy"
+        loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits(
+            logits=y_pred, labels=y_true
+        )
+        # loss_fn = "categorical_crossentropy"
 
         # Define the optimizer
-        optimizer_fn = Adadelta(
-            lr=self.parameter.learning_rate,
-            rho=self.parameter.rho,
-            epsilon=None,
-            decay=self.parameter.decay,
-        )
-        # optimizer_fn = tf.train.AdamOptimizer(
-        #     learning_rate=self.parameter.learning_rate
+        # optimizer_fn = Adadelta(
+        #     lr=self.parameter.learning_rate,
+        #     rho=self.parameter.rho,
+        #     epsilon=None,
+        #     decay=self.parameter.decay,
         # )
+        optimizer_fn = Adam(
+            learning_rate=self.parameter.learning_rate
+        )
 
         # put all components together
         model.compile(
@@ -205,7 +224,7 @@ class NNDefinition(BaseNN):
                 epochs=self.parameter.epochs,
                 verbose=self.parameter.fitting_verbosity,
                 callbacks=used_callbacks,
-                shuffle=self.parameter.shuffle,
+                shuffle=False,
             )
         else:
             history = model.fit(
@@ -216,13 +235,13 @@ class NNDefinition(BaseNN):
                 epochs=self.parameter.epochs,
                 verbose=self.parameter.fitting_verbosity,
                 callbacks=used_callbacks,
-                shuffle=self.parameter.shuffle,
+                shuffle=False,
             )
         self.parameter.trained_epochs = history.epoch[-1] + 1
         logger.info("Training Finished!")
         return history
 
-    def train_network(self, epochs=0):
+    def train_network(self, epochs=0, accuracy_data=None):
         initial_epoch = self.parameter.trained_epochs
         train_data = self.train_data
         valid_data = self.validation_data
@@ -235,10 +254,10 @@ class NNDefinition(BaseNN):
         )
 
         # # Calculate accuracy
-        final_metrics = self.calc_categorical_accuracy(model, valid_data)
+        final_metrics = self.calc_categorical_accuracy(model, test_data, accuracy_data)
 
         # # Calulate prediction
-        predictions, given = self.is_vs_should_categorical(model, valid_data)
+        predictions, given = self.is_vs_should_categorical(model, test_data)
         label_vectors = (predictions, given)
 
         return model, final_metrics, label_vectors, training_history

@@ -2,11 +2,9 @@
 import os
 import copy
 import logging
-from categorical.helper.profiling import timing
+from categorical._helper.profiling import timing
 import numpy as np
 import pandas as pd
-import sklearn.metrics as skm
-import matplotlib.pyplot as plt
 
 # typing imports
 from typing import Tuple, Union
@@ -35,18 +33,21 @@ Adadelta = keras.optimizers.Adadelta
 # # Utils
 plot_model = keras.utils.plot_model
 
-dir_name = os.path.split(os.path.split(os.path.dirname(__file__))[0])[1]
-sub_dir_name = model_name = os.path.split(os.path.dirname(__file__))[1]
-model_name = dir_name + "_" + sub_dir_name
-dir_path = os.path.join(dir_name,sub_dir_name)
+# _helper imports
+from categorical._helper.encoding import one_hot
 
-# helper imports
+dir_name = os.path.split(os.path.split(os.path.dirname(__file__))[0])[1]
+sub_dir_name =  os.path.split(os.path.dirname(__file__))[1]
+model_name = dir_name + "_" + sub_dir_name
+dir_path = os.path.join(dir_name, sub_dir_name)
+
+# _helper imports
 
 # Network
-import categorical.model.deepLSTM as deepLSTM
+import categorical._model.vanillaLSTM as vanillaLSTM
 
 # Data
-from categorical.EEGEyes.eeg_eyes import Loader
+from categorical.UCIHAR.uci_har import Loader
 
 logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
@@ -55,7 +56,7 @@ logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 ##############################################################################################
 
 
-class HyperParameters(deepLSTM.NNParameters):
+class HyperParameters(vanillaLSTM.NNParameters):
     """ HyperParamters for the neural network
 
     """
@@ -73,9 +74,22 @@ class HyperParameters(deepLSTM.NNParameters):
         # Hyperparameter
         self.label = self.labels
         self.classes = self.categorizations  # [self.label]
+        # # Data
+        self.colums_to_use = [
+            0,
+            1,
+            #2,
+            #3,
+            #4,
+            #5,
+            #6,
+            #7,
+            #8,
+        ]  # List of data columns to be used
         # # Training (Hyperparameters)
-        self.batch_size = 4
+        self.batch_size = 100
         self.epochs = 50
+
         # END Hyperparameter
 
         del loader
@@ -87,7 +101,7 @@ class HyperParameters(deepLSTM.NNParameters):
 ##############################################################################################
 
 
-class DeepLearning(deepLSTM.NNDefinition):
+class DeepLearning(vanillaLSTM.NNDefinition):
     def __init__(self, hyperparameter):
         super().__init__(hyperparameter)
         self.parameter: HyperParameters = hyperparameter
@@ -99,61 +113,39 @@ class DeepLearning(deepLSTM.NNDefinition):
         Tuple[Union[DataFrame, Series, ndarray, csr_matrix], ...],
         Tuple[Union[DataFrame, Series, ndarray, csr_matrix], ...],
         Tuple[Union[DataFrame, Series, ndarray, csr_matrix], ...],
-        Tuple[Union[DataFrame, Series, ndarray, csr_matrix], ...],
     ]:
-        # Import data
+        # Import UCIHAR data
         loader = Loader()
-        x_train, y_train, x_train_pred, y_train_pred, x_val, y_val, x_test, y_test = loader.eeg_data(
-            self.parameter.batch_size
+        x_train, y_train, x_test, y_test = loader.uci_har_dataset_data(
+            self.parameter.colums_to_use
         )
 
+        # # Features
+        # if len(x_train.shape) > 2:
+        #     # Flatten Input
+        #     x_train = x_train.reshape(x_train.shape[0], -1)
+        #     x_test = x_test.reshape(x_test.shape[0], -1)
+        #     # (or) Feature Extracion Input
+        #     # feature_0 = np.mean(x_train, axis=1)
+        #     # feature_1 = np.std(x_train, axis=1)
+        #     # x_train = np.concatenate((feature_0, feature_1), axis=1)
+        #     # feature_0 = np.mean(x_test, axis=1)
+        #     # feature_1 = np.std(x_test, axis=1)
+        #     # x_test = np.concatenate((feature_0, feature_1), axis=1)
+        y_train = one_hot(y_train)
+        y_test = one_hot(y_test)
         train_data = x_train, y_train
-        train_data_pred = x_train_pred, y_train_pred
-        test_data = x_test, y_test
-        valid_data = x_val, y_val
+        valid_data = x_test, y_test
+        test_data  = np.ndarray([]), np.ndarray([])
         self.train_data = train_data
         self.test_data = test_data
         self.validation_data = valid_data
-        return train_data, train_data_pred, test_data, valid_data
-
-    def calc_categorical_accuracy(self, model, non_train_data, add_data=None):
-        train_data_pred = add_data
-        final_metrics = {}
-        trainX_forPred, trainY_forPred = train_data_pred
-        y_train_pred = model.predict(
-            np.repeat(
-                trainX_forPred, self.parameter.batch_size, axis=0
-            )  ## need same input shape as for training and thus repeating 4 times
-        )
-        ## score
-        final_metrics["accuracy"] = skm.accuracy_score(
-            trainY_forPred[0, :, 0], np.where(y_train_pred[0, :, 0] > 0.8, 1, 0)
-        )
-
-        ## evaluate first batch (other are copies)
-        plt.plot(trainY_forPred[0, :, 0], label="true")
-        plt.plot(y_train_pred[0, :, 0], label="pred0", alpha=0.5)
-        plt.plot(y_train_pred[0, :, 1], label="pred1", alpha=0.5)
-        plt.legend()
-        plt.show()
-
-        testX, testY = non_train_data
-        # evaulate test ste
-        y_pred = model.predict(np.repeat(testX, self.parameter.batch_size, axis=0))
-        ## score
-        final_metrics["val_accuracy"] = skm.accuracy_score(
-            testY[0, :, 0], np.where(y_pred[0, :, 0] > 0.8, 1, 0)
-        )
-        plt.plot(testY[0, :, 0], label="true")
-        plt.plot(y_pred[0, :, 0], label="pred0", alpha=0.5)
-        plt.plot(y_pred[0, :, 1], label="pred1", alpha=0.5)
-        plt.legend()
-        plt.show()
+        return train_data, test_data, valid_data
 
     def setup_and_train_network(self):
         # Data
         # # Loading
-        train_data, train_data_pred, test_data, valid_data = self.load_data()
+        train_data, valid_data, test_data = self.load_data()
 
         # Model
         # # Definition
@@ -161,7 +153,7 @@ class DeepLearning(deepLSTM.NNDefinition):
 
         # # Training
         model, final_metrics, label_vectors, training_history = self.train_network(
-            epochs=self.parameter.epochs, accuracy_data=train_data_pred
+            epochs=self.parameter.epochs
         )
 
         return model, final_metrics, label_vectors, training_history
@@ -182,8 +174,7 @@ if __name__ == "__main__":
     hyperparameters = HyperParameters(model_name=model_name, loglevel=logging.DEBUG)
     # Setup Model
     neural_network = DeepLearning(hyperparameters)
-    # Train model
+    # Train _model
     neural_network.setup_and_train_network()
     # Do more stuff
     # neural_network.train_network(100)
-    logger.debug("Finished")

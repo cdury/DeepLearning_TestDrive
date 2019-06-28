@@ -55,10 +55,10 @@ def plot_data(pl, data, label):
 
 #   Common function that draws the decision boundaries
 def plot_decision_boundary(model, data, label) -> plt:
-    """Plots a grid of model prediction in addition to the
+    """Plots a grid of _model prediction in addition to the
         data according to the labels
 
-    :param model:   Trained keras model
+    :param model:   Trained keras _model
     :param data:    2D data
     :param label:   Labels of data
     :return:
@@ -71,7 +71,7 @@ def plot_decision_boundary(model, data, label) -> plt:
     aa, bb = np.meshgrid(hticks, vticks)
     ab = np.c_[aa.ravel(), bb.ravel()]
 
-    # make prediction with the model and reshape the output so contourf can plot it
+    # make prediction with the _model and reshape the output so contourf can plot it
     c = model.predict(ab)
     z_data = c.reshape(aa.shape)
 
