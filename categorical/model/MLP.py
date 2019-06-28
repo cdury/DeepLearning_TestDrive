@@ -4,7 +4,9 @@ import time
 import logging
 import numpy as np
 import pandas as pd
+import sklearn.metrics as skm
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
 # typing imports
 from typing import Tuple, List, Any, Union, Optional
@@ -13,6 +15,7 @@ from pandas import DataFrame, Series
 
 # keras imports
 from tensorflow.python.keras.api._v2 import keras
+from tensorflow.python.keras.api._v1 import keras as kerasV1
 
 # # Backend
 keras_backend = keras.backend
@@ -20,62 +23,59 @@ keras_backend = keras.backend
 Input = keras.layers.Input
 Dense = keras.layers.Dense
 LSTM = keras.layers.LSTM
+GRU = keras.layers.GRU
+CuDNNGRU = keras.layers.GRU  # kerasV1.layers.CuDNNGRU
+GaussianNoise = keras.layers.GaussianNoise
+Conv1D = keras.layers.Conv1D
+Convolution1D = keras.layers.Convolution1D
+MaxPooling1D = keras.layers.MaxPooling1D
+GlobalAveragePooling1D = keras.layers.GlobalAveragePooling1D
+TimeDistributed = keras.layers.TimeDistributed
 # # Model
 Model = keras.models.Model
+Sequential = keras.models.Sequential
 # # Regularizers
 l2 = keras.regularizers.l2
 # # Optimizer
 Adam = keras.optimizers.Adam
+Adadelta = keras.optimizers.Adadelta
+RMSprop = keras.optimizers.RMSprop
+Nadam = keras.optimizers.Nadam
+
 # # Utils
 plot_model = keras.utils.plot_model
 
 model_name = os.path.splitext(os.path.basename(__file__))[0]
 
 # helper imports
-from helper.helper_encoding import one_hot
+from categorical.helper.encoding import one_hot
 
 ##############################################################################################
 # Parameters
 ##############################################################################################
-# Data
-from helper.helper_load_data import uci_har_dataset_data as data
-from helper.helper_load_data import UCI_HAR_INPUT_SIGNAL_TYPES as INPUT_SIGNAL_TYPES
-from helper.helper_load_data import UCI_HAR_LABELS as LABELS
 
 # Network
-from networks.Base_Supervised_Categorical import BaseParameters, BaseNN, timing
+from categorical.model.Base_Supervised import BaseParameters, BaseNN, timing
 
 logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
 
-class HyperParameters(BaseParameters):
+class NNParameters(BaseParameters):
     """ HyperParamters for the neural network
 
     """
 
-    def __init__(self, model_name, loglevel, parent_name=None):
+    def __init__(self, model_name, dir_path, loglevel, parent_name=None):
         # Process parameter
-        super().__init__(model_name, loglevel, parent_name)
+        super().__init__(model_name, dir_path, loglevel, parent_name)
         # Filesystem & Paths
         # # data
         self.data_dir = self.data_path
 
         # Hyperparameter
         # # Data
-        self.colums_to_use = [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-        ]  # List of data columns to be used
-        self.colum_names = INPUT_SIGNAL_TYPES
-        self.labels = LABELS  # Labels of th categorizations
-
+        self.colum_names = None
+        self.labels = None  # Labels of th categorizations
         # # Modell (Hyperparamters)
         self.n_hidden_1 = 100  # Num of features in the first hidden layer
         self.n_hidden_2 = 50  # Num of features in the first hidden layer
@@ -100,48 +100,16 @@ class HyperParameters(BaseParameters):
 ##############################################################################################
 
 
-class SNNLayerN(BaseNN):
+class NNDefinition(BaseNN):
     def __init__(self, hyperparameter):
         super().__init__(hyperparameter)
-        self.parameter: HyperParameters = hyperparameter
-
-    @timing
-    def load_data(
-        self
-    ) -> Tuple[
-        Tuple[Union[DataFrame, Series, ndarray], ...],
-        Tuple[Union[DataFrame, Series, ndarray], ...],
-        Tuple[Union[DataFrame, Series, ndarray], ...],
-    ]:
-        # Import HAR data
-        x_train, y_train, x_test, y_test = data(self.parameter.colums_to_use)
-
-        # # Features
-        if len(x_train.shape) > 2:
-            # Flatten Input
-            x_train = x_train.reshape(x_train.shape[0], -1)
-            x_test = x_test.reshape(x_test.shape[0], -1)
-            # (or) Feature Extracion Input
-            # feature_0 = np.mean(x_train, axis=1)
-            # feature_1 = np.std(x_train, axis=1)
-            # x_train = np.concatenate((feature_0, feature_1), axis=1)
-            # feature_0 = np.mean(x_test, axis=1)
-            # feature_1 = np.std(x_test, axis=1)
-            # x_test = np.concatenate((feature_0, feature_1), axis=1)
-        y_train = one_hot(y_train)
-        y_test = one_hot(y_test)
-        train_data = x_train, y_train
-        test_data = x_test, y_test
-        valid_data = np.ndarray([]), np.ndarray([])
-        self.test_data = test_data
-        self.validation_data = valid_data
-        return train_data, test_data, valid_data
+        self.parameter: NNParameters = hyperparameter
 
     @timing
     def define_model(self, input_shape, output_shape) -> Model:
         # Input (number of inputs)
         n_input = input_shape[1]
-        self.parameter.n_input = n_input
+        self.parameter.input_shape = n_input
         # Output (number of classes)
         n_classes = output_shape[1]
         self.parameter.n_classes = n_classes
@@ -181,17 +149,37 @@ class SNNLayerN(BaseNN):
         # Define the model's start and end points
         model = Model(inputs=input_layer, outputs=out_layer)
 
+
         # Define the loss function
         loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits(
             logits=y_pred, labels=y_true
         )
-        # loss_fn = "categorical_crossentropy"
+        #loss_fn = "categorical_crossentropy"
 
         # Define the optimizer
-        optimizer_fn = Adam(lr=self.parameter.learning_rate)
-        # optimizer_fn = tf.train.AdamOptimizer(
-        #     learning_rate=self.parameter.learning_rate
+        # optimizer_fn = Adadelta(
+        #     lr=self.parameter.learning_rate,
+        #     rho=self.parameter.rho,
+        #     epsilon=None,
+        #     decay=self.parameter.decay,
         # )
+        optimizer_fn = Adam(
+            learning_rate=self.parameter.learning_rate
+        )
+        # optimizer_fn = RMSprop(
+        #     lr=self.parameter.learning_rate,
+        #     rho=self.parameter.rho,
+        #     epsilon=None,
+        #     decay=0.0,
+        # )
+        # optimizer_fn = Nadam(
+        #     lr=self.parameter.learning_rate,
+        #     beta_1=self.parameter.beta_1,  # 0.9,
+        #     beta_2=self.parameter.beta_2,  # 0.999,
+        #     epsilon=None,
+        #     schedule_decay=0.004,
+        # )
+        # optimizer_fn = "adam"
 
         # put all components together
         model.compile(
@@ -208,14 +196,14 @@ class SNNLayerN(BaseNN):
                 show_shapes=True,
                 show_layer_names=True,
             )
-
+        self.model = model
         return model
 
     @timing
-    def train_model(self, model, train_data, validation_data):
+    def train_model(self, model, train_data, validation_data, initial_epoch=0):
         # Data
         x_train, y_train = train_data
-        x_test, y_test = validation_data
+        x_val, y_val = validation_data
 
         # Callbacks
         tensorboard, checkpoint, earlyterm = self.get_callbacks()
@@ -226,8 +214,9 @@ class SNNLayerN(BaseNN):
             history = model.fit(
                 x_train,
                 y_train,
-                validation_data=(x_test, y_test),
+                validation_data=(x_val, y_val),
                 batch_size=self.parameter.batch_size,
+                initial_epoch=initial_epoch,
                 epochs=self.parameter.epochs,
                 verbose=self.parameter.fitting_verbosity,
                 callbacks=used_callbacks,
@@ -236,56 +225,33 @@ class SNNLayerN(BaseNN):
             history = model.fit(
                 x_train,
                 y_train,
-                validation_data=(x_test, y_test),
+                validation_data=(x_val, y_val),
+                initial_epoch=initial_epoch,
                 epochs=self.parameter.epochs,
                 verbose=self.parameter.fitting_verbosity,
                 callbacks=used_callbacks,
             )
+        self.parameter.trained_epochs = history.epoch[-1] + 1
         logger.info("Training Finished!")
         return history
 
-    def setup_and_train_network(self):
-        # Data
-        # # Loading
-        train_data, test_data, _ = self.load_data()
-        # EITHER
-        # with keras_backend.get_session() as sess: # get active tf-session
-        # OR
-        # config = tf.compat.v1.ConfigProto(device_count={"GPU": 1, "CPU": 1})
-        # config.gpu_options.allow_growth = True
-        # with tf.compat.v1.Session(config=config) as sess:
-        #     keras_backend.set_session(sess)
-        #     # END EITHER
-
-        # Model
-        # # Definition
-        model = self.define_model(train_data[0].shape, train_data[1].shape)
-
+    def train_network(self, epochs=0):
+        initial_epoch = self.parameter.trained_epochs
+        train_data = self.train_data
+        valid_data = self.validation_data
+        test_data = self.test_data
+        model = self.model
+        self.parameter.epochs = epochs
         # # Training
-        training_history = self.train_model(model, train_data, test_data)
+        training_history = self.train_model(
+            model, train_data, valid_data, initial_epoch=initial_epoch
+        )
 
         # # Calculate accuracy
-        final_metrics = self.calc_categorical_accuracy(model, test_data)
+        final_metrics = self.calc_categorical_accuracy(model, valid_data)
 
         # # Calulate prediction
-        predictions, given = self.is_vs_should_categorical(model, test_data)
+        predictions, given = self.is_vs_should_categorical(model, valid_data)
         label_vectors = (predictions, given)
 
-        # keras_backend.clear_session()
-
         return model, final_metrics, label_vectors, training_history
-
-
-if __name__ == "__main__":
-    from tensorflow.python.client import device_lib
-
-    logger.debug("ENVIRONMENT")
-    for device in device_lib.list_local_devices():
-        logger.debug(
-            f"{device.name}:{device.device_type} with memory {device.memory_limit}"
-        )
-        logger.debug(f" {device.physical_device_desc}")
-
-    hyperparameters = HyperParameters(model_name=model_name, loglevel=logging.DEBUG)
-    neural_network = SNNLayerN(hyperparameters)
-    neural_network.setup_and_train_network()

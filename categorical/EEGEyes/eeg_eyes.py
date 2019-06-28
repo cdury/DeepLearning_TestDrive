@@ -2,7 +2,7 @@
 # http://archive.ics.uci.edu/ml/datasets/EEG+Eye+State
 #
 # Usage:
-# from dataloader.motionsense import Loader
+# from dataloader.eeg_eyes import Loader
 # dataloader = Loader()
 # trainX, trainY, trainX_forPred, trainY_forPred, valX, valY, testX, testY = dataloader.eeg_eyes(<batches>)
 import os
