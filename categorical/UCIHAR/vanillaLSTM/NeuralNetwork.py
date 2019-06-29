@@ -37,7 +37,7 @@ plot_model = keras.utils.plot_model
 from categorical._helper.encoding import one_hot
 
 dir_name = os.path.split(os.path.split(os.path.dirname(__file__))[0])[1]
-sub_dir_name =  os.path.split(os.path.dirname(__file__))[1]
+sub_dir_name = os.path.split(os.path.dirname(__file__))[1]
 model_name = dir_name + "_" + sub_dir_name
 dir_path = os.path.join(dir_name, sub_dir_name)
 
@@ -78,17 +78,17 @@ class HyperParameters(vanillaLSTM.NNParameters):
         self.colums_to_use = [
             0,
             1,
-            #2,
-            #3,
-            #4,
-            #5,
-            #6,
-            #7,
-            #8,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
         ]  # List of data columns to be used
         # # Training (Hyperparameters)
-        self.batch_size = 100
-        self.epochs = 50
+        self.batch_size = 0
+        self.epochs = 2
 
         # END Hyperparameter
 
@@ -136,11 +136,11 @@ class DeepLearning(vanillaLSTM.NNDefinition):
         y_test = one_hot(y_test)
         train_data = x_train, y_train
         valid_data = x_test, y_test
-        test_data  = np.ndarray([]), np.ndarray([])
+        test_data = np.ndarray([]), np.ndarray([])
         self.train_data = train_data
         self.test_data = test_data
         self.validation_data = valid_data
-        return train_data, test_data, valid_data
+        return train_data, valid_data, test_data
 
     def setup_and_train_network(self):
         # Data

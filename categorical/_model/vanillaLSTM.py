@@ -117,7 +117,9 @@ class NNDefinition(BaseNN):
         self.parameter.n_classes = n_classes
 
         # Start defining the input tensor:
-        input_layer = Input((n_timesteps, n_input))  # (time steps, measurments per time step)
+        input_layer = Input(
+            (n_timesteps, n_input)
+        )  # (time steps, measurments per time step)
 
         # create the layers and pass them the input tensor to get the output tensor:
         layer_1 = LSTM(
@@ -154,9 +156,7 @@ class NNDefinition(BaseNN):
         #     epsilon=None,
         #     decay=self.parameter.decay,
         # )
-        optimizer_fn = Adam(
-            learning_rate=self.parameter.learning_rate
-        )
+        optimizer_fn = Adam(learning_rate=self.parameter.learning_rate)
 
         # put all components together
         model.compile(
@@ -225,10 +225,10 @@ class NNDefinition(BaseNN):
         )
 
         # # Calculate accuracy
-        final_metrics = self.calc_categorical_accuracy(model, test_data, accuracy_data)
+        final_metrics = self.calc_categorical_accuracy(model, valid_data, accuracy_data)
 
         # # Calulate prediction
-        predictions, given = self.is_vs_should_categorical(model, test_data)
+        predictions, given = self.is_vs_should_categorical(model, valid_data)
         label_vectors = (predictions, given)
 
         return model, final_metrics, label_vectors, training_history

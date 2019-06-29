@@ -25,6 +25,7 @@ Dense = keras.layers.Dense
 LSTM = keras.layers.LSTM
 GRU = keras.layers.GRU
 CuDNNGRU = keras.layers.GRU  # kerasV1.layers.CuDNNGRU
+CuDNNLSTM = kerasV1.layers.CuDNNLSTM
 GaussianNoise = keras.layers.GaussianNoise
 Conv1D = keras.layers.Conv1D
 Convolution1D = keras.layers.Convolution1D
@@ -87,10 +88,10 @@ class NNParameters(BaseParameters):
         self.activation_output = "softmax"
 
         # # Optimizer (Hyperparamters)
-        self.learning_rate = 1.0
+        self.learning_rate = 0.025
         self.rho = 0.95
         self.decay = 0.0
-        self.lambda_loss_amount = 0.005
+        self.lambda_loss_amount = 0.000191
         self.metric = "accuracy"
 
         # END Hyperparameter
@@ -118,36 +119,38 @@ class NNDefinition(BaseNN):
         self.parameter.n_classes = n_classes
 
         # Start defining the input tensor:
-        input_layer = Input((n_timesteps,n_input)) #(time steps, measurments per time step)
-        feature_input = Input((2*n_input,))        # (Average,StdDev) of each inpit (measurement series)
+        input_layer = Input(
+            (n_timesteps, n_input)
+        )  # (time steps, measurments per time step)
+        feature_input = Input(
+            (2 * n_input,)
+        )  # (Average,StdDev) of each inpit (measurement series)
 
         # create the layers and pass them the input tensor to get the output tensor:
         layer_1 = LSTM(
-            units=self.parameter.n_hidden, # hidden (=output) neurons
+            units=self.parameter.n_hidden,  # hidden (=output) neurons
             unit_forget_bias=True,
             kernel_initializer=self.parameter.init_kernel,
             # dropout=0.2,
             # recurrent_dropout=0.2,
-            return_sequences=False,
+            return_sequences=True,
             kernel_regularizer=l2(self.parameter.lambda_loss_amount),
             recurrent_regularizer=l2(self.parameter.lambda_loss_amount),
         )(input_layer)
 
-
         layer_2 = LSTM(
-            units=self.parameter.n_middle, # hidden (=output) neurons
+            units=self.parameter.n_middle,  # hidden (=output) neurons
             unit_forget_bias=True,
             kernel_initializer=self.parameter.init_kernel,
             # dropout=0.2,
             # recurrent_dropout=0.2,
-            return_sequences=False,
+            return_sequences=True,
             kernel_regularizer=l2(self.parameter.lambda_loss_amount),
             recurrent_regularizer=l2(self.parameter.lambda_loss_amount),
         )(layer_1)
 
-
         layer_3 = LSTM(
-            units=self.parameter.n_classes+4, # hidden (=output) neurons
+            units=self.parameter.n_classes + 4,  # hidden (=output) neurons
             unit_forget_bias=True,
             kernel_initializer=self.parameter.init_kernel,
             # dropout=0.2,
@@ -155,18 +158,17 @@ class NNDefinition(BaseNN):
             return_sequences=False,
             kernel_regularizer=l2(self.parameter.lambda_loss_amount),
             recurrent_regularizer=l2(self.parameter.lambda_loss_amount),
-        )(input_layer)
+        )(layer_2)
 
         out_layer = Dense(
             units=self.parameter.n_classes,
             activation=self.parameter.activation_output,
             kernel_initializer=self.parameter.init_kernel,
             kernel_regularizer=l2(self.parameter.lambda_loss_amount),
-        )(layer_1)
+        )(layer_3)
 
         # Define the _model's start and end points
         model = Model(inputs=input_layer, outputs=out_layer)
-
 
         # Define the loss function
         loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits(
@@ -181,9 +183,7 @@ class NNDefinition(BaseNN):
         #     epsilon=None,
         #     decay=self.parameter.decay,
         # )
-        optimizer_fn = Adam(
-            learning_rate=self.parameter.learning_rate
-        )
+        optimizer_fn = Adam(learning_rate=self.parameter.learning_rate)
 
         # put all components together
         model.compile(
@@ -254,10 +254,10 @@ class NNDefinition(BaseNN):
         )
 
         # # Calculate accuracy
-        final_metrics = self.calc_categorical_accuracy(model, test_data, accuracy_data)
+        final_metrics = self.calc_categorical_accuracy(model, valid_data, accuracy_data)
 
         # # Calulate prediction
-        predictions, given = self.is_vs_should_categorical(model, test_data)
+        predictions, given = self.is_vs_should_categorical(model, valid_data)
         label_vectors = (predictions, given)
 
         return model, final_metrics, label_vectors, training_history
