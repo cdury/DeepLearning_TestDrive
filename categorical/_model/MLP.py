@@ -149,12 +149,11 @@ class NNDefinition(BaseNN):
         # Define the _model's start and end points
         model = Model(inputs=input_layer, outputs=out_layer)
 
-
         # Define the loss function
         loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits(
             logits=y_pred, labels=y_true
         )
-        #loss_fn = "categorical_crossentropy"
+        # loss_fn = "categorical_crossentropy"
 
         # Define the optimizer
         # optimizer_fn = Adadelta(
@@ -163,9 +162,7 @@ class NNDefinition(BaseNN):
         #     epsilon=None,
         #     decay=self.parameter.decay,
         # )
-        optimizer_fn = Adam(
-            learning_rate=self.parameter.learning_rate
-        )
+        optimizer_fn = Adam(learning_rate=self.parameter.learning_rate)
         # optimizer_fn = RMSprop(
         #     lr=self.parameter.learning_rate,
         #     rho=self.parameter.rho,

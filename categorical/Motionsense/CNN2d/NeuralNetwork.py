@@ -38,9 +38,9 @@ Adadelta = keras.optimizers.Adadelta
 plot_model = keras.utils.plot_model
 
 dir_name = os.path.split(os.path.split(os.path.dirname(__file__))[0])[1]
-sub_dir_name =  os.path.split(os.path.dirname(__file__))[1]
+sub_dir_name = os.path.split(os.path.dirname(__file__))[1]
 model_name = dir_name + "_" + sub_dir_name
-dir_path = os.path.join(dir_name,sub_dir_name)
+dir_path = os.path.join(dir_name, sub_dir_name)
 
 # _helper imports
 
@@ -109,13 +109,13 @@ class DeepLearning(CNN2D.NNDefinition):
         y_test = y[idx_test]
         return y_train, y_test
 
-    def process_recurrent_xdata(self, loader, df_list, label_df,idx_train, idx_test):
+    def process_recurrent_xdata(self, loader, df_list, label_df, idx_train, idx_test):
         ## https://www.kaggle.com/tigurius/recuplots-and-cnns-for-time-series-classification/notebook
         ## and
         ## https://www.kaggle.com/jdarcy/introducing-ssa-for-time-series-decomposition
-        def check_pics(self, transform='recurrence'):
+        def check_pics(self, transform="recurrence"):
             ### Check Pics
-            if transform == 'recurrence':
+            if transform == "recurrence":
                 ts_to_picture = ts_to_pic
             else:
                 ts_to_picture = ts_to_pic_fft
@@ -131,7 +131,9 @@ class DeepLearning(CNN2D.NNDefinition):
             # cols = ["attitude.roll","attitude.pitch","attitude.yaw","gravity.x","gravity.y","gravity.z","rotationRate.x","rotationRate.y","rotationRate.z","userAcceleration.x", "userAcceleration.y", "userAcceleration.z"]
             fig, axs = plt.subplots(2, 3, figsize=(15, 14))
             for ax, sub in zip(axs.flatten(), subs):
-                i = np.where((label_df["activity"] == act) & (label_df["subject"] == sub))[0][0]
+                i = np.where(
+                    (label_df["activity"] == act) & (label_df["subject"] == sub)
+                )[0][0]
                 ax.imshow(ts_to_picture(df_list[i])[:, :, 0])
                 ax.set_title(sub)
             # %%
@@ -182,7 +184,6 @@ class DeepLearning(CNN2D.NNDefinition):
             pics = np.dstack(ft_channels)
             return pics
 
-
         ## fit scaler on all values
         scaler = preprocessing.StandardScaler()
         all_values = pd.concat(df_list)
@@ -193,9 +194,9 @@ class DeepLearning(CNN2D.NNDefinition):
         ## https://www.kaggle.com/tigurius/recuplots-and-cnns-for-time-series-classification#
         # modified from https://stackoverflow.com/questions/33650371/recurrence-plot-in-python
         pic_dims = (64, 64)
-        check_pics('recurrence')
+        check_pics("recurrence")
         plt.show()
-        check_pics('fft')
+        check_pics("fft")
         plt.show()
         n_channels = len(loader.input_signal_types)
 
@@ -205,7 +206,7 @@ class DeepLearning(CNN2D.NNDefinition):
             if i / 10 == i // 10:
                 print(f"{i} von {len(df_list)}")
             pic = ts_to_pic(df)
-            #pic = ts_to_pic_fft(df)
+            # pic = ts_to_pic_fft(df)
             X[i, :, :, :] = pic
 
         # X = X.reshape(X.shape[0], 1, 32,32)
@@ -283,8 +284,10 @@ class DeepLearning(CNN2D.NNDefinition):
         y_train, y_valid = self.process_ydata(
             label_df[self.parameter.label].values, idx_train, idx_test
         )
-        #x_train, x_valid = self.process_stft_xdata(loader, df_list, idx_train, idx_test)
-        x_train, x_valid = self.process_recurrent_xdata(loader, df_list,label_df, idx_train, idx_test)
+        # x_train, x_valid = self.process_stft_xdata(loader, df_list, idx_train, idx_test)
+        x_train, x_valid = self.process_recurrent_xdata(
+            loader, df_list, label_df, idx_train, idx_test
+        )
 
         train_data = x_train, y_train
         valid_data = x_valid, y_valid

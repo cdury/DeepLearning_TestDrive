@@ -2,7 +2,7 @@ import os
 import logging
 import numpy as np
 
-from time import  strftime, gmtime
+from time import strftime, gmtime
 from logging.config import dictConfig
 from categorical._helper.profiling import timing
 
@@ -30,7 +30,11 @@ dictConfig(
             "f": {"format": "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"}
         },
         handlers={
-            "h": {"class": "logging.StreamHandler", "formatter": "f", "level": loglevel_this}
+            "h": {
+                "class": "logging.StreamHandler",
+                "formatter": "f",
+                "level": loglevel_this,
+            }
         },
         root={"handlers": ["h"], "level": loglevel_this},
     )
@@ -61,7 +65,10 @@ class BaseParameters:
 
         # # _model
         self.model_path = os.path.join(
-            home_path, "categorical", dir_path, parent_name if parent_name else '' # model_name
+            home_path,
+            "categorical",
+            dir_path,
+            parent_name if parent_name else "",  # model_name
         )
         self.model_dir = os.path.join(self.model_path, base_ts_name)
         if not os.path.isdir(self.model_dir):
@@ -78,9 +85,9 @@ class BaseParameters:
         # 0: All Msg 1: No INFO 2: No INFO & WARNING 3: No INFO, WARNING & ERROR
         if loglevel <= logging.DEBUG:
             str_loglevel = "0"
-        elif logging.INFO <= loglevel <= logging.WARNING :
+        elif logging.INFO <= loglevel <= logging.WARNING:
             str_loglevel = "1"
-        elif loglevel == logging.ERROR :
+        elif loglevel == logging.ERROR:
             str_loglevel = "2"
         else:
             str_loglevel = "3"
@@ -118,8 +125,10 @@ class BaseParameters:
         # # Results
         self.trained_epochs = 0
         # # Placeholder (need to be set in child object)
+        self.shuffle = None
         self.batch_size = None
         self.epochs = None
+
 
 class BaseNN:
     def __init__(self, hyperparameter):
@@ -201,11 +210,10 @@ class BaseNN:
 
         return final_metrics
 
-
     @timing
     def is_vs_should_categorical(self, model, non_train_data):
         x, y = non_train_data
-        index = len(y.shape)-1
+        index = len(y.shape) - 1
         predictions = model.predict(x)
         given = np.asarray(y.argmax(index)).reshape(-1)
         predictions = np.asarray(predictions.argmax(index)).reshape(-1)

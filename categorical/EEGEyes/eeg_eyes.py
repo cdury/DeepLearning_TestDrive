@@ -87,7 +87,7 @@ class Loader:
         ), "batches must divide ts_length"
         data = pd.read_csv(
             os.path.join(self.dataset_path, self.filename),
-            names=self.input_signal_types + [self.label] ,
+            names=self.input_signal_types + [self.label],
             skiprows=19,
             index_col=False,
         )
@@ -118,7 +118,7 @@ class Loader:
         step_size = self.ts_length // batches  # 1000
 
         n_ts = self.t0 // self.ts_length - 1
-        first_start = self.t0 - (n_ts + 1) * self.ts_length # = 0
+        first_start = self.t0 - (n_ts + 1) * self.ts_length  # = 0
         ts_starts = np.array(
             range(first_start, self.t0 - step_size - self.ts_length + 1, step_size)
         )

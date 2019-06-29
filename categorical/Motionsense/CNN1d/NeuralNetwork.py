@@ -33,14 +33,15 @@ Adadelta = keras.optimizers.Adadelta
 plot_model = keras.utils.plot_model
 
 dir_name = os.path.split(os.path.split(os.path.dirname(__file__))[0])[1]
-sub_dir_name =  os.path.split(os.path.dirname(__file__))[1]
+sub_dir_name = os.path.split(os.path.dirname(__file__))[1]
 model_name = dir_name + "_" + sub_dir_name
-dir_path = os.path.join(dir_name,sub_dir_name)
+dir_path = os.path.join(dir_name, sub_dir_name)
 
 # _helper imports
 
 # Network
 import categorical._model.CNN1D as CNN1D
+
 # Data
 from categorical.Motionsense.motionsense import Loader
 
@@ -49,7 +50,6 @@ logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 ##############################################################################################
 # Parameters
 ##############################################################################################
-
 
 
 class HyperParameters(CNN1D.NNParameters):
@@ -100,9 +100,9 @@ class DeepLearning(CNN1D.NNDefinition):
     def load_data(
         self
     ) -> Tuple[
-        Tuple[Union[DataFrame, Series, ndarray,csr_matrix], ...],
-        Tuple[Union[DataFrame, Series, ndarray,csr_matrix], ...],
-        Tuple[Union[DataFrame, Series, ndarray,csr_matrix], ...],
+        Tuple[Union[DataFrame, Series, ndarray, csr_matrix], ...],
+        Tuple[Union[DataFrame, Series, ndarray, csr_matrix], ...],
+        Tuple[Union[DataFrame, Series, ndarray, csr_matrix], ...],
     ]:
         # Import data
         loader = Loader()
@@ -116,7 +116,7 @@ class DeepLearning(CNN1D.NNDefinition):
         self.train_data = train_data
         self.test_data = test_data
         self.validation_data = valid_data
-        return train_data,  valid_data , test_data
+        return train_data, valid_data, test_data
 
     def setup_and_train_network(self):
         # Data
@@ -128,7 +128,9 @@ class DeepLearning(CNN1D.NNDefinition):
         model = self.define_model(train_data[0].shape, train_data[1].shape)
 
         # # Training
-        model, final_metrics, label_vectors, training_history = self.train_network(epochs=self.parameter.epochs)
+        model, final_metrics, label_vectors, training_history = self.train_network(
+            epochs=self.parameter.epochs
+        )
 
         return model, final_metrics, label_vectors, training_history
 
@@ -151,4 +153,4 @@ if __name__ == "__main__":
     # Train _model
     neural_network.setup_and_train_network()
     # Do more stuff
-    #neural_network.train_network(100)
+    # neural_network.train_network(100)

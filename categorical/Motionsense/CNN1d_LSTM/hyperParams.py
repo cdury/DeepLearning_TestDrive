@@ -7,7 +7,7 @@ from hyperopt import hp
 # Even with hyperoptimization, there are still some parameters
 from Categorical import Network  # Model to be optimized
 from Categorical import run_and_get_error  # Model to be optimized
-hyper_opt_name = "MOTION_CNN1D"  # Name of optimization run <NAME_OF_DATASET>_<NAME_OF_NETWORK>
+hyper_opt_name = "MOTION_CNN1D_LSTM"  # Name of optimization run <NAME_OF_DATASET>_<NAME_OF_NETWORK>
 model_name = Network.model_name
 load_hyper_params_from_pickle = False  # True: continue optimization / False: new optimization
 num_trials = 3  # Number of trial-runs

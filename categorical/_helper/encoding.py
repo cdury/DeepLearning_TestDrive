@@ -18,6 +18,6 @@ def one_hot(y_: Union[pd.DataFrame, np.array], n_classes: int = None) -> np.arra
     """
 
     y_ = y_.reshape(len(y_))
-    one_hot_encoded =  to_categorical(y_, np.max(y_)+1, dtype=np.int32)
+    one_hot_encoded = to_categorical(y_, np.max(y_) + 1, dtype=np.int32)
     return one_hot_encoded
     # return np.eye(n_classes)[np.array(y_, dtype=np.int32)]  # Returns FLOATS

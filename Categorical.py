@@ -23,6 +23,7 @@ from typing import Any, Dict, Tuple, Optional
 from categorical._helper.graphical import category_evaluation
 
 # _model import
+# ToDo: Import specific neural network
 import categorical.Motionsense.CNN1d.NeuralNetwork as Network
 
 
@@ -109,6 +110,8 @@ def run_and_evaluate(hyperparameter) -> None:
     labels = additional_dict["labels"]
     given = additional_dict["given"]
     predictions = additional_dict["predictions"]
+
+    # ToDo: Visulaisation of the results
     # Show Results
     # # Plots
     category_evaluation(len(labels), labels, given, predictions)
@@ -118,8 +121,8 @@ def run_and_evaluate(hyperparameter) -> None:
 
 if __name__ == "__main__":
     # Define Hyperparameters
-    hyperparameters = Network.HyperParameters(model_name=Network.model_name, loglevel=logging.ERROR)
+    # ToDo: Check loglevel
+    hyperparameters = Network.HyperParameters(
+        model_name=Network.model_name, loglevel=logging.ERROR
+    )
     run_and_evaluate(hyperparameters)
-
-
-

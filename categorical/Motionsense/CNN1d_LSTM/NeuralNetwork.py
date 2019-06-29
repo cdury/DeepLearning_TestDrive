@@ -36,9 +36,9 @@ Adadelta = keras.optimizers.Adadelta
 plot_model = keras.utils.plot_model
 
 dir_name = os.path.split(os.path.split(os.path.dirname(__file__))[0])[1]
-sub_dir_name =  os.path.split(os.path.dirname(__file__))[1]
+sub_dir_name = os.path.split(os.path.dirname(__file__))[1]
 model_name = dir_name + "_" + sub_dir_name
-dir_path = os.path.join(dir_name,sub_dir_name)
+dir_path = os.path.join(dir_name, sub_dir_name)
 
 # _helper imports
 

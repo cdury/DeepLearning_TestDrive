@@ -12,12 +12,17 @@ dictConfig(
             "f": {"format": "%(asctime)s %(name)-12s %(levelname)-8s %(message)s"}
         },
         handlers={
-            "h": {"class": "logging.StreamHandler", "formatter": "f", "level": loglevel_this}
+            "h": {
+                "class": "logging.StreamHandler",
+                "formatter": "f",
+                "level": loglevel_this,
+            }
         },
         root={"handlers": ["h"], "level": loglevel_this},
     )
 )
 logger = logging.getLogger("Profiling")
+
 
 def timing(method):
     @wraps(method)

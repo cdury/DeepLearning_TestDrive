@@ -24,7 +24,8 @@ Input = keras.layers.Input
 Dense = keras.layers.Dense
 LSTM = keras.layers.LSTM
 GRU = keras.layers.GRU
-CuDNNGRU = keras.layers.GRU  # kerasV1.layers.CuDNNGRU
+CuDNNGRU = kerasV1.layers.CuDNNGRU
+CuDNNLSTM = kerasV1.layers.CuDNNLSTM
 GaussianNoise = keras.layers.GaussianNoise
 Conv1D = keras.layers.Conv1D
 Convolution1D = keras.layers.Convolution1D
@@ -43,13 +44,12 @@ l2 = keras.regularizers.l2
 # # Optimizer
 Adam = keras.optimizers.Adam
 Adadelta = keras.optimizers.Adadelta
+RMSprop = keras.optimizers.RMSprop
+Nadam = keras.optimizers.Nadam
 # # Utils
 plot_model = keras.utils.plot_model
 
 model_name = os.path.splitext(os.path.basename(__file__))[0]
-
-# _helper imports
-from categorical._helper.encoding import one_hot
 
 ##############################################################################################
 # Parameters
@@ -73,25 +73,24 @@ class NNParameters(BaseParameters):
         # # data
         self.data_dir = self.data_path
 
+        # ToDo: Hyperparameter for network model and optimizer (non data related)
         # Hyperparameter
         # # Data
         self.colum_names = None
         self.labels = None  # Labels of th categorizations
         # # Modell (Hyperparamters)
-        self.n_conv_1 = 32
-        self.n_conv_1_kernel = (3, 3)
-        self.n_conv_1_pooling = (2, 2)
-        self.n_hidden_2 = 32
-        self.dropout = 0.1
+        # self.n_hidden = 4  # Num of hidden features in the first lstm layer
+        # self.n_middle = 12  # Num of hidden features in the second lstm layer
+        # self.dropout = 0.2
         self.init_kernel = "random_normal"  # "he_normal", 'random_normal'
         self.activation_hidden = "relu"
         self.activation_output = "softmax"
 
         # # Optimizer (Hyperparamters)
-        self.learning_rate = 1.0
-        self.rho = 0.95
-        self.decay = 0.0
-        self.lambda_loss_amount = 0.005
+        self.learning_rate = 0.025
+        # self.rho = 0.95
+        # self.decay = 0.0
+        self.lambda_loss_amount = 0.000191
         self.metric = "accuracy"
 
         # END Hyperparameter
@@ -110,69 +109,76 @@ class NNDefinition(BaseNN):
 
     @timing
     def define_model(self, input_shape, output_shape) -> Model:
-        # Input (number of inputs)
-        dim_pic_x = input_shape[1]
-        dim_pic_y = input_shape[2]
-        n_input = input_shape[3]
-        self.parameter.input_shape = (dim_pic_x, dim_pic_y, n_input)
+        # ToDo: Check if input_shape correspond to model input
+        # # Input1D (i.e. flattened input for dense layer)
+        # n_input = input_shape[1]
+        # self.parameter.input_shape = n_input
+        # Input2D (i.e. Timeseries with scalar measurments)
+        n_timesteps = input_shape[1]
+        n_input = input_shape[2]
+        self.parameter.input_shape = (n_timesteps, n_input)
+        # # Input3D (i.e. SFTF: Timeseries with 2d mesuremnts/pictures)
+        # n_fft_timesteps = input_shape[1]
+        # n_freq = input_shape[2]
+        # n_input = input_shape[3]
+        # self.parameter.input_shape = (n_fft_timesteps, n_freq, n_input)
+        # # Input3D (2d picture with channels[i.e. color or other])
+        # dim_pic_x = input_shape[1]
+        # dim_pic_y = input_shape[2]
+        # n_input = input_shape[3]
+        # self.parameter.input_shape = (dim_pic_x, dim_pic_y, n_input)
+
+        # ToDo: Check if one hot encoded classes are in second or third axis
         # Output (number of classes)
         n_classes = output_shape[1]
         self.parameter.n_classes = n_classes
 
+        # ToDo: Complete model, preferably in Functional API style
+        # ToDo: Don't forget to insert hyperparameters
         # Start defining the input tensor:
-        model = Sequential()
-        model.add(
-            Convolution2D(
-                filters=self.parameter.n_conv_1,
-                kernel_size=self.parameter.n_conv_1_kernel,
-                activation=self.parameter.activation_hidden,
-                kernel_initializer=self.parameter.init_kernel,
-                input_shape=(dim_pic_x, dim_pic_y, n_input),
-                data_format="channels_last",
-            )
-        )
+        input_layer = Input(
+            (n_timesteps, n_input)
+        )  # (time steps, measurments per time step)
+        feature_input = Input(
+            (2 * n_input,)
+        )  # (Average,StdDev) of each inpit (measurement series)
+        # create the layers and pass them the input tensor to get the output tensor
+        out_layer = Dense(
+            units=self.parameter.n_classes,
+            activation=self.parameter.activation_output,
+            kernel_initializer=self.parameter.init_kernel,
+            kernel_regularizer=l2(self.parameter.lambda_loss_amount),
+        )(input_layer)
 
-        model.add(MaxPooling2D(pool_size=self.parameter.n_conv_1_pooling))
-        model.add(Dropout(self.parameter.dropout))
-        # _model.add(GaussianNoise(0.3))
-        # _model.add(Convolution2D(32, (3, 3),activation='relu'))
-        # _model.add(MaxPooling2D(pool_size=(2,2)))
-        # _model.add(Dropout(0.1))
-        # _model.add(GaussianNoise(0.1))
-        model.add(Flatten())
-        model.add(
-            Dense(
-                self.parameter.n_hidden_2,
-                activation=self.parameter.activation_hidden,
-                kernel_initializer=self.parameter.init_kernel,
-            )
-        )
-        # _model.add(LeakyReLU(alpha=0.03))
-        model.add(Dropout(self.parameter.dropout))
-        # _model.add(GaussianNoise(0.2))
-        model.add(
-            Dense(
-                self.parameter.n_classes,
-                activation=self.parameter.activation_output,
-                kernel_initializer=self.parameter.init_kernel,
-            )
-        )
+        # Define the _model's start and end points
+        model = Model(inputs=input_layer, outputs=out_layer)
 
-        # Define the loss function
-        # loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits(
-        #     logits=y_pred, labels=y_true
+        # ToDo: Define the loss function
+        loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits(
+            logits=y_pred, labels=y_true
+        )
+        # loss_fn = "categorical_crossentropy"
+
+        # ToDo: Define the optimizer
+        # optimizer_fn = Adadelta(
+        #     lr=self.parameter.learning_rate,
+        #     rho=self.parameter.rho,
+        #     epsilon=None,
+        #     decay=self.parameter.decay,
         # )
-        loss_fn = "categorical_crossentropy"
-
-        # Define the optimizer
-        optimizer_fn = Adadelta(
-            lr=self.parameter.learning_rate,
-            rho=self.parameter.rho,
-            epsilon=None,
-            decay=self.parameter.decay,
-        )
-        # optimizer_fn = tf.train.AdamOptimizer(
-        #     learning_rate=self.parameter.learning_rate
+        optimizer_fn = Adam(learning_rate=self.parameter.learning_rate)
+        # optimizer_fn = RMSprop(
+        #     lr=self.parameter.learning_rate,
+        #     rho=self.parameter.rho,
+        #     epsilon=None,
+        #     decay=0.0,
+        # )
+        # optimizer_fn = Nadam(
+        #     lr=self.parameter.learning_rate,
+        #     beta_1=self.parameter.beta_1,  # 0.9,
+        #     beta_2=self.parameter.beta_2,  # 0.999,
+        #     epsilon=None,
+        #     schedule_decay=0.004,
         # )
 
         # put all components together
@@ -201,9 +207,11 @@ class NNDefinition(BaseNN):
 
         # Callbacks
         tensorboard, checkpoint, earlyterm = self.get_callbacks()
+        # ToDo: Fill in wanted callbacks
         used_callbacks = [tensorboard]
 
         # Training
+        # ToDo: pay attention to suffle (for time series it should be False, else True)
         if self.parameter.batch_size > 0:
             history = model.fit(
                 x_train,
@@ -214,7 +222,7 @@ class NNDefinition(BaseNN):
                 epochs=self.parameter.epochs,
                 verbose=self.parameter.fitting_verbosity,
                 callbacks=used_callbacks,
-                shuffle=False,
+                shuffle=self.parameter.shuffle,
             )
         else:
             history = model.fit(
@@ -225,13 +233,13 @@ class NNDefinition(BaseNN):
                 epochs=self.parameter.epochs,
                 verbose=self.parameter.fitting_verbosity,
                 callbacks=used_callbacks,
-                shuffle=False,
+                shuffle=self.parameter.shuffle,
             )
         self.parameter.trained_epochs = history.epoch[-1] + 1
         logger.info("Training Finished!")
         return history
 
-    def train_network(self, epochs=0):
+    def train_network(self, epochs=0, accuracy_data=None):
         initial_epoch = self.parameter.trained_epochs
         train_data = self.train_data
         valid_data = self.validation_data
@@ -244,7 +252,7 @@ class NNDefinition(BaseNN):
         )
 
         # # Calculate accuracy
-        final_metrics = self.calc_categorical_accuracy(model, valid_data)
+        final_metrics = self.calc_categorical_accuracy(model, valid_data, accuracy_data)
 
         # # Calulate prediction
         predictions, given = self.is_vs_should_categorical(model, valid_data)

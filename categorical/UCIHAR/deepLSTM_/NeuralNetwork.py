@@ -44,7 +44,7 @@ dir_path = os.path.join(dir_name, sub_dir_name)
 # _helper imports
 
 # Network
-import categorical._model.deepLSTM_ as deepLSTM
+import categorical._model.deepLSTM as deepLSTM
 
 # Data
 from categorical.UCIHAR.uci_har import Loader

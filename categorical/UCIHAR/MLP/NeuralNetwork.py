@@ -37,7 +37,7 @@ plot_model = keras.utils.plot_model
 from categorical._helper.encoding import one_hot
 
 dir_name = os.path.split(os.path.split(os.path.dirname(__file__))[0])[1]
-sub_dir_name =  os.path.split(os.path.dirname(__file__))[1]
+sub_dir_name = os.path.split(os.path.dirname(__file__))[1]
 model_name = dir_name + "_" + sub_dir_name
 dir_path = os.path.join(dir_name, sub_dir_name)
 
@@ -136,7 +136,7 @@ class DeepLearning(MLP.NNDefinition):
         y_test = one_hot(y_test)
         train_data = x_train, y_train
         valid_data = x_test, y_test
-        test_data  = np.ndarray([]), np.ndarray([])
+        test_data = np.ndarray([]), np.ndarray([])
         self.train_data = train_data
         self.test_data = test_data
         self.validation_data = valid_data

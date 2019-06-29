@@ -31,6 +31,7 @@ from hyperopt import Trials
 from hyperopt import STATUS_OK, STATUS_FAIL
 
 # parameter import
+# ToDo: Import specific neural network specific hype parameters
 from categorical.Motionsense.CNN1d.hyperParams import (
     hyper_opt_name,
     model_name,
@@ -42,7 +43,7 @@ from categorical.Motionsense.CNN1d.hyperParams import (
 )
 
 # technicalities
-HYPER_PATH = os.path.join(os.getcwd(),"categorical",model_name)
+HYPER_PATH = os.path.join(os.getcwd(), "categorical", model_name)
 HYPER_BASE = (
     hyper_opt_name + "_" + time.strftime("%y%m%d%H%M", time.gmtime())
 )  # Unique name of a hyperoptimization run
@@ -160,8 +161,12 @@ def summarize_trials() -> None:
         misc = trial_dict["misc"]
         if result["status"] == STATUS_OK:
             logger.info(f"tid {misc['tid']}: {misc['vals']} ")
-            logger.info(f"tid {misc['tid']}:  => Acc {result['true_accuracy']} ({result['accuracy']})")
-            logger.info(f"tid {misc['tid']}:  => Loss ({result['true_loss']}/{result['loss']})")
+            logger.info(
+                f"tid {misc['tid']}:  => Acc {result['true_accuracy']} ({result['accuracy']})"
+            )
+            logger.info(
+                f"tid {misc['tid']}:  => Loss ({result['true_loss']}/{result['loss']})"
+            )
 
         else:
             logger.info(f"tid {misc['tid']}: {misc['vals']}")

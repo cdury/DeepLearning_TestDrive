@@ -5,6 +5,13 @@ import logging
 from categorical._helper.profiling import timing
 import numpy as np
 import pandas as pd
+import sklearn.metrics as skm
+from sklearn import preprocessing
+import librosa
+import matplotlib.pyplot as plt
+
+# _helper imports
+from categorical._helper.encoding import one_hot
 
 # typing imports
 from typing import Tuple, Union
@@ -33,9 +40,6 @@ Adadelta = keras.optimizers.Adadelta
 # # Utils
 plot_model = keras.utils.plot_model
 
-# _helper imports
-from categorical._helper.encoding import one_hot
-
 dir_name = os.path.split(os.path.split(os.path.dirname(__file__))[0])[1]
 sub_dir_name = os.path.split(os.path.dirname(__file__))[1]
 model_name = dir_name + "_" + sub_dir_name
@@ -44,10 +48,12 @@ dir_path = os.path.join(dir_name, sub_dir_name)
 # _helper imports
 
 # Network
-import categorical._model.MLP as MLP
+import categorical._model.vanillaLSTM as DeepLearningModel  # ToDo: replace vanillaLSTM wiht the model to be Used
 
 # Data
-from categorical.BostonHousing.boston_housing import Loader
+from categorical.UCIHAR.uci_har import (
+    Loader,
+)  # ToDo: replace UCIHAR.uci_har with the data loader to be used
 
 logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
@@ -56,7 +62,7 @@ logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 ##############################################################################################
 
 
-class HyperParameters(MLP.NNParameters):
+class HyperParameters(DeepLearningModel.NNParameters):
     """ HyperParamters for the neural network
 
     """
@@ -69,16 +75,20 @@ class HyperParameters(MLP.NNParameters):
         # # Data
         self.colum_names = copy.deepcopy(loader.input_signal_types)
         self.labels = copy.deepcopy(loader.label)
-        self.categorizations = copy.deepcopy(loader.classes)
+        self.label_classes = copy.deepcopy(loader.label_classes)
 
         # Hyperparameter
-        self.label = self.labels
+        self.label = "..."  # ToDo: Used Label (out of self.labels)
         self.classes = self.categorizations  # [self.label]
+        self.classes = self.label_classes[self.label]
         # # Data
+        # ToDo: Parameter for the data loader (if necessary) (i.e. self.columns_to_use)
         # # Training (Hyperparameters)
-        self.batch_size = 100
-        self.epochs = 50
-
+        # ToDo: Hyperparameter for network model
+        self.batch_size = 0
+        self.epochs = 2
+        self.shuffle = False
+        # ToDo: Further Hyperparameter as neccessary
         # END Hyperparameter
 
         del loader
@@ -90,7 +100,7 @@ class HyperParameters(MLP.NNParameters):
 ##############################################################################################
 
 
-class DeepLearning(MLP.NNDefinition):
+class DeepLearning(DeepLearningModel.NNDefinition):
     def __init__(self, hyperparameter):
         super().__init__(hyperparameter)
         self.parameter: HyperParameters = hyperparameter
@@ -103,31 +113,47 @@ class DeepLearning(MLP.NNDefinition):
         Tuple[Union[DataFrame, Series, ndarray, csr_matrix], ...],
         Tuple[Union[DataFrame, Series, ndarray, csr_matrix], ...],
     ]:
-        # Import Boston data
+        # Import ... data
         loader = Loader()
-        x_train, y_train, x_test, y_test = loader.boston_housing_data()
+        x_train, y_train, x_valid, y_valid, x_test, y_test = (
+            loader....()
+        )  # ToDo: insert loader
 
         # # Features
-        if len(x_train.shape) > 2:
-            # Flatten Input
-            x_train = x_train.reshape(x_train.shape[0], -1)
-            x_test = x_test.reshape(x_test.shape[0], -1)
-            # (or) Feature Extracion Input
-            # feature_0 = np.mean(x_train, axis=1)
-            # feature_1 = np.std(x_train, axis=1)
-            # x_train = np.concatenate((feature_0, feature_1), axis=1)
-            # feature_0 = np.mean(x_test, axis=1)
-            # feature_1 = np.std(x_test, axis=1)
-            # x_test = np.concatenate((feature_0, feature_1), axis=1)
-        # y_train = one_hot(y_train)
-        # y_test = one_hot(y_test)
+        # ToDo: If not feasibel in Loader
+        # ToDo: Reshaping (dimensions, ...)
+        # ToDo:Tranformation (recurrent pic, stft, ...)
+        # ToDo: Features (mean, std, indicators ,....)
+        # if len(x_train.shape) > 2:
+        #     # Flatten Input
+        #     x_train = x_train.reshape(x_train.shape[0], -1)
+        #     x_test = x_test.reshape(x_test.shape[0], -1)
+        #     # (or) Feature Extracion Input
+        #     # feature_0 = np.mean(x_train, axis=1)
+        #     # feature_1 = np.std(x_train, axis=1)
+        #     # x_train = np.concatenate((feature_0, feature_1), axis=1)
+        #     # feature_0 = np.mean(x_test, axis=1)
+        #     # feature_1 = np.std(x_test, axis=1)
+        #     # x_test = np.concatenate((feature_0, feature_1), axis=1)
+        y_train = one_hot(
+            y_train
+        )  # ToDo: one hot encoding of labels if not already done
+        y_test = one_hot(y_test)  # ToDo: one hot encoding of labels if not already done
         train_data = x_train, y_train
-        valid_data = x_test, y_test
-        test_data = np.ndarray([]), np.ndarray([])
+        valid_data = x_valid, y_valid
+        test_data = (
+            x_test,
+            y_test,
+        )  # ToDo: np.ndarray([]), np.ndarray([]) if not test_data
         self.train_data = train_data
         self.test_data = test_data
         self.validation_data = valid_data
         return train_data, valid_data, test_data
+
+    # ToDo: Overload if method in Base_Supervised is not sufficient
+    # def calc_categorical_accuracy(self, model, non_train_data, add_data=None):
+    #     final_metrics = {}
+    #     return final_metrics
 
     def setup_and_train_network(self):
         # Data
@@ -164,4 +190,6 @@ if __name__ == "__main__":
     # Train _model
     neural_network.setup_and_train_network()
     # Do more stuff
+    # ToDo: if necessary
     # neural_network.train_network(100)
+    logger.debug("Finished")

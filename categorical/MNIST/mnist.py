@@ -38,7 +38,7 @@ class Loader:
         self.input_signal_types = ["28x28 Pictures"]
         # Output classes to learn how to classify
         self.label = "Numbers"
-        self.classes = ["0","1","2","3","4","5","6","7","8","9"]
+        self.classes = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
     def mnist_data(self):
         (X_train, y_train), (X_test, y_test) = keras.datasets.mnist.load_data()

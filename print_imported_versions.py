@@ -15,6 +15,7 @@ try:
     msg += f"Keras\n"
     msg += f" Version \t: {keras.__version__}\n"
     from tensorflow.python import keras
+
     msg += f" GPU ready \t: {keras.backend._get_available_gpus()}\n"
     msg += f"\n"
 except:
