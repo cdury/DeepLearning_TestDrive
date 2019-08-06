@@ -16,6 +16,7 @@ from scipy.sparse import csr_matrix
 
 # keras imports
 from tensorflow.python.keras.api._v2 import keras
+import tensorflow as tf
 
 # # Backend
 keras_backend = keras.backend
