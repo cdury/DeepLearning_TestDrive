@@ -24,7 +24,17 @@ from categorical._helper.graphical import category_evaluation
 
 # _model import
 # ToDo: Import specific neural network
-import categorical.Motionsense.CNN1d.NeuralNetwork as Network
+#import categorical.BostonHousing.MLP.NeuralNetwork as Network
+#import categorical.EEGEyes.deepLSTM_batch.NeuralNetwork as Network
+#import categorical.MNIST.MLP.NeuralNetwork as Network
+#import categorical.Motionsense.CNN1d.NeuralNetwork as Network
+#import categorical.Motionsense.CNN1d_LSTM.NeuralNetwork as Network
+#import categorical.Motionsense.CNN2d.NeuralNetwork as Network
+#import categorical.Motionsense.MLP_LSTM.NeuralNetwork as Network
+#import categorical.UCIHAR.MLP.NeuralNetwork as Network
+#import categorical.UCIHAR.deepLSTM_.NeuralNetwork as Network
+#import categorical.UCIHAR.vanillaLSTM.NeuralNetwork as Network
+import categorical.SimpleChart.MLP.NeuralNetwork as Network
 
 
 ##############################################################################################
@@ -47,6 +57,7 @@ def neural_net(
     model, final_metrics, label_vectors, history = (
         neural_network.setup_and_train_network()
     )
+    print("Final metrics", final_metrics)
     # # loss_acc
     train_losses = history.history["loss"] if "loss" in history.history else [0]
     train_accuracies = (
@@ -63,8 +74,8 @@ def neural_net(
     # # additional_dict
     additional_dict = {}
     additional_dict["stored_model"] = neural_network.parameter.model_name
-    labels = neural_network.parameter.label_categories
-    additional_dict["labels"] = labels
+    classes = neural_network.parameter.classes
+    additional_dict["classes"] = classes
     predictions, given = label_vectors
     additional_dict["given"] = given
     additional_dict["predictions"] = predictions
@@ -107,14 +118,14 @@ def run_and_evaluate(hyperparameter) -> None:
     )
     # Unpack results
     train_loss, train_accuracy, test_loss, test_accuracy = loss_acc
-    labels = additional_dict["labels"]
+    classes = additional_dict["classes"]
     given = additional_dict["given"]
     predictions = additional_dict["predictions"]
 
     # ToDo: Visulaisation of the results
     # Show Results
     # # Plots
-    category_evaluation(len(labels), labels, given, predictions)
+    category_evaluation(len(classes), classes, given, predictions)
 
     return None
 
@@ -123,6 +134,6 @@ if __name__ == "__main__":
     # Define Hyperparameters
     # ToDo: Check loglevel
     hyperparameters = Network.HyperParameters(
-        model_name=Network.model_name, loglevel=logging.ERROR
+        model_name=Network.model_name, loglevel=logging.DEBUG
     )
     run_and_evaluate(hyperparameters)

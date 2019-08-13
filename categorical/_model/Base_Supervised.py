@@ -22,7 +22,7 @@ ModelCheckpoint = keras.callbacks.ModelCheckpoint
 EarlyStopping = keras.callbacks.EarlyStopping
 
 # Global object
-loglevel_this = logging.WARN
+loglevel_this = logging.DEBUG
 dictConfig(
     dict(
         version=1,

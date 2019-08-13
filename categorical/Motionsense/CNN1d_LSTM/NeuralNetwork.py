@@ -80,6 +80,7 @@ class HyperParameters(CNN1D_LSTM.NNParameters):
             self.label = "activity"
             self.n_timesteps = 300
         self.label_categories = self.categorizations[self.label]
+        self.classes = self.label_categories
         # # Training (Hyperparameters)
         self.shuffle = True
         self.batch_size = 100

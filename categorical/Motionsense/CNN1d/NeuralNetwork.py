@@ -77,6 +77,7 @@ class HyperParameters(CNN1D.NNParameters):
             self.label = "activity"
             self.n_timesteps = 300
         self.label_categories = self.categorizations[self.label]
+        self.classes = self.label_categories
         # # Training (Hyperparameters)
         self.batch_size = 100
         self.epochs = 50
