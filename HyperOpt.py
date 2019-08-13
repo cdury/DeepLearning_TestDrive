@@ -32,7 +32,7 @@ from hyperopt import STATUS_OK, STATUS_FAIL
 
 # parameter import
 # ToDo: Import specific neural network specific hype parameters
-from categorical.Motionsense.CNN1d.hyperParams import (
+from categorical.SimpleChart.MLP.hyperParams import (
     hyper_opt_name,
     model_name,
     num_trials,
