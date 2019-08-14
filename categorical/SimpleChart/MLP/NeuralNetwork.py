@@ -45,7 +45,7 @@ dir_path = os.path.join(dir_name, sub_dir_name)
 # _helper imports
 
 # Network
-import categorical._model.MLP as MLP
+import categorical._model.DeepMLP as MLP
 
 # Data
 from categorical.SimpleChart.simplechart import Loader
@@ -77,8 +77,8 @@ class HyperParameters(MLP.NNParameters):
         self.classes = self.categorizations  # [self.label]
         # # Data
         # # Training (Hyperparameters)
-        self.batch_size = 100
-        self.epochs = 50
+        self.batch_size = 0
+        self.epochs = 100
 
         # END Hyperparameter
 
@@ -95,6 +95,8 @@ class DeepLearning(MLP.NNDefinition):
     def __init__(self, hyperparameter):
         super().__init__(hyperparameter)
         self.parameter: HyperParameters = hyperparameter
+        logger.debug(f"Random Seed {self.parameter.random_seed}")
+        np.random.seed(self.parameter.random_seed)
 
     @timing
     def load_data(

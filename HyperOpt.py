@@ -32,6 +32,7 @@ from hyperopt import STATUS_OK, STATUS_FAIL
 
 # parameter import
 # ToDo: Import specific neural network specific hype parameters
+from Categorical import category_evaluation as graphic_evaluation
 from categorical.SimpleChart.MLP.hyperParams import (
     hyper_opt_name,
     model_name,
@@ -101,7 +102,7 @@ def objective(args: Dict[str, Any]) -> Dict[str, Any]:
         setattr(hyperparameters, key, value)
 
     # run with this particular hyperparameter realization
-    try:
+    if True: ### try:
         loss_acc, additional_dict = run_and_get_error(
             hyperparameters, return_model=False
         )
@@ -126,13 +127,13 @@ def objective(args: Dict[str, Any]) -> Dict[str, Any]:
             # special key
             "attachment": additional_dict,
         }
-    except Exception as e:
-        return {
-            # built in keys
-            "status": STATUS_FAIL,
-            # special key
-            "attachment": {"exception": str(e)},
-        }
+    #except Exception as e:
+    #    return {
+    #        # built in keys
+    #        "status": STATUS_FAIL,
+    #        # special key
+    #        "attachment": {"exception": str(e)},
+    #    }
 
 
 def save_trials() -> None:
@@ -174,7 +175,7 @@ def summarize_trials() -> None:
         # saved_nn = trials.trial_attachments(trial_dict)["saved"]
 
 
-def main() -> None:
+def main_hyperparameter_search() -> None:
     """ Conduct the hyperoptimization
 
     :return:
@@ -212,6 +213,7 @@ def main() -> None:
     summarize_trials()
     logger.info(f"{i+1} Trials => Best result was: {best}")
 
+    return
 
 def signal_handler(signal, frame) -> None:
     """
@@ -230,6 +232,19 @@ def signal_handler(signal, frame) -> None:
 
 signal.signal(signal.SIGINT, signal_handler)
 
+def main_show_result_of_best_hyperparameter():
+    logger.info("Loading best Trial (NeuralNet)")
+    result = trials.best_trial['result']
+    attachment = result['attachment']
+    classes = attachment['classes']
+    given = attachment['given']
+    predictions = attachment['predictions']
+    logger.info("Show Graphics")
+    graphic_evaluation(len(classes), classes, given, predictions)
+
 if __name__ == "__main__":
     logger.info(f"Start Hyperoptimazation: {hyper_opt_name}")
-    main()
+    main_hyperparameter_search()
+    logger.info(f"Show Hyperoptimazation Results:")
+    main_show_result_of_best_hyperparameter()
+    logger.info(f"Hyperoptimazation Finished!")
