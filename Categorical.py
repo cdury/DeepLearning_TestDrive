@@ -24,17 +24,17 @@ from categorical._helper.graphical import category_evaluation
 
 # _model import
 # ToDo: Import specific neural network
-#import categorical.BostonHousing.MLP.NeuralNetwork as Network
+#import categorical.BostonHousing.DeepMLP.NeuralNetwork as Network
 #import categorical.EEGEyes.deepLSTM_batch.NeuralNetwork as Network
-#import categorical.MNIST.MLP.NeuralNetwork as Network
+#import categorical.MNIST.DeepMLP.NeuralNetwork as Network
 #import categorical.Motionsense.CNN1d.NeuralNetwork as Network
 #import categorical.Motionsense.CNN1d_LSTM.NeuralNetwork as Network
 #import categorical.Motionsense.CNN2d.NeuralNetwork as Network
 #import categorical.Motionsense.MLP_LSTM.NeuralNetwork as Network
-#import categorical.UCIHAR.MLP.NeuralNetwork as Network
+#import categorical.UCIHAR.DeepMLP.NeuralNetwork as Network
 #import categorical.UCIHAR.deepLSTM_.NeuralNetwork as Network
 #import categorical.UCIHAR.vanillaLSTM.NeuralNetwork as Network
-import categorical.SimpleChart.MLP.NeuralNetwork as Network
+import categorical.SimpleChart.DeepMLP.NeuralNetwork as Network
 
 
 ##############################################################################################

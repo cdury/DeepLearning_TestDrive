@@ -39,13 +39,14 @@ from categorical._helper.encoding import one_hot
 dir_name = os.path.split(os.path.split(os.path.dirname(__file__))[0])[1]
 sub_dir_name = os.path.split(os.path.dirname(__file__))[1]
 model_name = dir_name + "_" + sub_dir_name # ToDo: Create Dir if this is the right place, else delte line
-model_name = os.path.join(dir_name,sub_dir_name)
+
+
 dir_path = os.path.join(dir_name, sub_dir_name)
 
 # _helper imports
 
 # Network
-import categorical._model.DeepMLP as MLP
+import categorical._model.DeepMLP as DeepMLP
 
 # Data
 from categorical.SimpleChart.simplechart import Loader
@@ -57,7 +58,7 @@ logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 ##############################################################################################
 
 
-class HyperParameters(MLP.NNParameters):
+class HyperParameters(DeepMLP.NNParameters):
     """ HyperParamters for the neural network
 
     """
@@ -91,7 +92,7 @@ class HyperParameters(MLP.NNParameters):
 ##############################################################################################
 
 
-class DeepLearning(MLP.NNDefinition):
+class DeepLearning(DeepMLP.NNDefinition):
     def __init__(self, hyperparameter):
         super().__init__(hyperparameter)
         self.parameter: HyperParameters = hyperparameter

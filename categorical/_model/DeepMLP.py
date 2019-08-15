@@ -198,7 +198,7 @@ class NNDefinition(BaseNN):
 
         # Callbacks
         tensorboard, checkpoint, earlyterm = self.get_callbacks()
-        used_callbacks = [] # [tensorboard, earlyterm]
+        used_callbacks = [checkpoint] # [tensorboard, earlyterm]
 
         # Training
         if self.parameter.batch_size > 0:
