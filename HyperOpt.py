@@ -164,10 +164,10 @@ def summarize_trials() -> None:
         if result["status"] == STATUS_OK:
             logger.info(f"tid {misc['tid']}: {misc['vals']} ")
             logger.info(
-                f"tid {misc['tid']}:  => Acc {result['true_accuracy']} ({result['accuracy']})"
+                f"tid {misc['tid']}:  => Acc {result['true_accuracy']} ( {result['accuracy']} )"
             )
             logger.info(
-                f"tid {misc['tid']}:  => Loss ({result['true_loss']}/{result['loss']})"
+                f"tid {misc['tid']}:  => Loss {result['true_loss']} ( {result['loss']} )"
             )
 
         else:

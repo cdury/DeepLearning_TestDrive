@@ -109,7 +109,7 @@ class DeepLearning(DeepMLP.NNDefinition):
     ]:
         # Import Boston data
         loader = Loader()
-        x_train, y_train, x_test, y_test = loader.boston_housing_data()
+        x_train, y_train, x_test, y_test = loader.load_data()
 
         # # Features
         if len(x_train.shape) > 2:
@@ -123,8 +123,8 @@ class DeepLearning(DeepMLP.NNDefinition):
             # feature_0 = np.mean(x_test, axis=1)
             # feature_1 = np.std(x_test, axis=1)
             # x_test = np.concatenate((feature_0, feature_1), axis=1)
-        # y_train = one_hot(y_train)
-        # y_test = one_hot(y_test)
+        y_train = one_hot(y_train)
+        y_test = one_hot(y_test)
         train_data = x_train, y_train
         valid_data = x_test, y_test
         test_data = np.ndarray([]), np.ndarray([])
