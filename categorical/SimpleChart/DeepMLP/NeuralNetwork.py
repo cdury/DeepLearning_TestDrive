@@ -38,7 +38,9 @@ from categorical._helper.encoding import one_hot
 
 dir_name = os.path.split(os.path.split(os.path.dirname(__file__))[0])[1]
 sub_dir_name = os.path.split(os.path.dirname(__file__))[1]
-model_name = dir_name + "_" + sub_dir_name # ToDo: Create Dir if this is the right place, else delte line
+model_name = (
+    dir_name + "_" + sub_dir_name
+)  # ToDo: Create Dir if this is the right place, else delte line
 
 
 dir_path = os.path.join(dir_name, sub_dir_name)
@@ -77,6 +79,18 @@ class HyperParameters(DeepMLP.NNParameters):
         self.label = self.labels
         self.classes = self.categorizations  # [self.label]
         # # Data
+        self.rr = 2
+        self.period = 2
+        self.atr = 100
+        self.look_back_period = 202
+
+        self.lambda_loss_amount = 0.10837
+        self.layer_size_decrease = 2.364272059920257
+        self.layer_size_start = 1.0
+        self.learning_rate = 0.04273
+        self.number_of_layers = 7
+        self.random_seed = 110
+
         # # Training (Hyperparameters)
         self.batch_size = 0
         self.epochs = 100
@@ -109,13 +123,23 @@ class DeepLearning(DeepMLP.NNDefinition):
     ]:
         # Import Boston data
         loader = Loader()
-        x_train, y_train, x_test, y_test = loader.load_data()
+
+        x_train, y_train, x_validate, y_validate, x_test, y_test = loader.load_data(
+            self.parameter.rr,
+            self.parameter.period,
+            self.parameter.atr,
+            self.parameter.look_back_period,
+        )
 
         # # Features
         if len(x_train.shape) > 2:
             # Flatten Input
-            x_train = x_train.reshape(x_train.shape[0], -1)
-            x_test = x_test.reshape(x_test.shape[0], -1)
+            if x_train.shape[0] > 0:
+                x_train = x_train.reshape(x_train.shape[0], -1)
+            if x_validate.shape[0] > 0:
+                x_validate = x_validate.reshape(x_validate.shape[0], -1)
+            if x_test.shape[0] > 0:
+                x_test = x_test.reshape(x_test.shape[0], -1)
             # (or) Feature Extracion Input
             # feature_0 = np.mean(x_train, axis=1)
             # feature_1 = np.std(x_train, axis=1)
@@ -123,11 +147,13 @@ class DeepLearning(DeepMLP.NNDefinition):
             # feature_0 = np.mean(x_test, axis=1)
             # feature_1 = np.std(x_test, axis=1)
             # x_test = np.concatenate((feature_0, feature_1), axis=1)
-        y_train = one_hot(y_train)
-        y_test = one_hot(y_test)
+        # one hot if necessary
+        # y_train = one_hot(y_train)
+        # y_test = one_hot(y_test)
+
         train_data = x_train, y_train
-        valid_data = x_test, y_test
-        test_data = np.ndarray([]), np.ndarray([])
+        valid_data = x_validate, y_validate
+        test_data = x_test, y_test
         self.train_data = train_data
         self.test_data = test_data
         self.validation_data = valid_data

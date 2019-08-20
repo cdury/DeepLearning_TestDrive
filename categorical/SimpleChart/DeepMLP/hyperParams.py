@@ -16,17 +16,21 @@ dir_path = Network.dir_path
 load_hyper_params_from_pickle = (
     False
 )  # True: continue optimization / False: new optimization
-num_trials = 50  # Number of trial-runs
+num_trials = 500  # Number of trial-runs
 
 # The key in the space must match a variable name in HyperParameters
 # (has to be populated with domain knowledge)
 init_space = {
   "random_seed": hp.choice("random_seed", (0, 1, 3, 7, 11, 33, 42, 110)),
-  }
+  "rr": hp.choice("rr", (1,2,3,4)),
+  "period": hp.choice("period", (1, 2, 3, 5, 10, 15, 20)),
+  "atr": hp.choice("atr", (25, 50, 75, 100, 125, 150)),
+  "look_back_period": hp.quniform("look_back_period", 20, 300,1),
+}
 build_space = {
     "number_of_layers": hp.quniform("number_of_layers", 2, 10,1),
     # "dropout" : hp.quniform("dropout", 0, 1, 0.01),
-    "layer_size_start": hp.quniform("layer_size_start", 0.1, 2,0.1),
+    "layer_size_start": hp.quniform("layer_size_start", 1, 10,1),
     "layer_size_decrease" :  hp.uniform("layer_size_decrease", 1, 5)
 }
 data_space = {}
