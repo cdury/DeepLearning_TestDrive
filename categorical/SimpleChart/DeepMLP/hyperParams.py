@@ -9,14 +9,14 @@ from Categorical import Network  # Model to be optimized
 from Categorical import run_and_get_error  # Model to be optimized
 
 hyper_opt_name = (
-    "DeepMLP_HyperOpt"
+    "XAU_DeepMLP"
 )  # Name of optimization run <NAME_OF_DATASET>_<NAME_OF_NETWORK>
 model_name = Network.model_name
 dir_path = Network.dir_path
 load_hyper_params_from_pickle = (
     False
 )  # True: continue optimization / False: new optimization
-num_trials = 500  # Number of trial-runs
+num_trials = 5  # Number of trial-runs
 
 # The key in the space must match a variable name in HyperParameters
 # (has to be populated with domain knowledge)
