@@ -75,14 +75,18 @@ class NNParameters(BaseParameters):
         self.data_dir = self.data_path
 
         # Hyperparameter
+        self.random_seed = 1
         # # Data
         self.colum_names = None
         self.labels = None  # Labels of th categorizations
         # # Modell (Hyperparamters)
-        self.n_hidden = 4  # Num of hidden features in the first lstm layer
+        self.n_first = 4  # Num of hidden features in the first lstm layer
         self.n_middle = 12  # Num of hidden features in the second lstm layer
+        self.n_add_last = 4  # Num of additional hidden features in the last lstm layer
 
         self.dropout = 0.2
+        self.number_of_hidden_layers = 2
+
         self.init_kernel = "random_normal"  # "he_normal", 'random_normal'
         self.activation_hidden = "relu"
         self.activation_output = "softmax"
@@ -127,30 +131,27 @@ class NNDefinition(BaseNN):
         )  # (Average,StdDev) of each inpit (measurement series)
 
         # create the layers and pass them the input tensor to get the output tensor:
-        layer_1 = LSTM(
-            units=self.parameter.n_hidden,  # hidden (=output) neurons
-            unit_forget_bias=True,
-            kernel_initializer=self.parameter.init_kernel,
-            # dropout=0.2,
-            # recurrent_dropout=0.2,
-            return_sequences=True,
-            kernel_regularizer=l2(self.parameter.lambda_loss_amount),
-            recurrent_regularizer=l2(self.parameter.lambda_loss_amount),
-        )(input_layer)
+        feed_layer = input_layer
+        for layer_number in range(self.parameter.number_of_hidden_layers):
+            if layer_number == 0:
+                hidden_features = self.parameter.n_first
+            else:
+                hidden_features = self.parameter.n_middle
+            hidden_layer = LSTM(
+                units=hidden_features,  # hidden (=output) neurons
+                unit_forget_bias=True,
+                kernel_initializer=self.parameter.init_kernel,
+                # dropout=0.2,
+                # recurrent_dropout=0.2,
+                return_sequences=True,
+                kernel_regularizer=l2(self.parameter.lambda_loss_amount),
+                recurrent_regularizer=l2(self.parameter.lambda_loss_amount),
+            )(feed_layer)
+            feed_layer = hidden_layer
 
-        layer_2 = LSTM(
-            units=self.parameter.n_middle,  # hidden (=output) neurons
-            unit_forget_bias=True,
-            kernel_initializer=self.parameter.init_kernel,
-            # dropout=0.2,
-            # recurrent_dropout=0.2,
-            return_sequences=True,
-            kernel_regularizer=l2(self.parameter.lambda_loss_amount),
-            recurrent_regularizer=l2(self.parameter.lambda_loss_amount),
-        )(layer_1)
 
-        layer_3 = LSTM(
-            units=self.parameter.n_classes + 4,  # hidden (=output) neurons
+        hidden_layer = LSTM(
+            units=self.parameter.n_classes + self.parameter.n_add_last,  # hidden (=output) neurons
             unit_forget_bias=True,
             kernel_initializer=self.parameter.init_kernel,
             # dropout=0.2,
@@ -158,14 +159,14 @@ class NNDefinition(BaseNN):
             return_sequences=False,
             kernel_regularizer=l2(self.parameter.lambda_loss_amount),
             recurrent_regularizer=l2(self.parameter.lambda_loss_amount),
-        )(layer_2)
+        )(feed_layer)
 
         out_layer = Dense(
             units=self.parameter.n_classes,
             activation=self.parameter.activation_output,
             kernel_initializer=self.parameter.init_kernel,
             kernel_regularizer=l2(self.parameter.lambda_loss_amount),
-        )(layer_3)
+        )(hidden_layer)
 
         # Define the _model's start and end points
         model = Model(inputs=input_layer, outputs=out_layer)

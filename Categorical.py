@@ -31,10 +31,11 @@ from categorical._helper.graphical import category_evaluation
 #import categorical.Motionsense.CNN1d_LSTM.NeuralNetwork as Network
 #import categorical.Motionsense.CNN2d.NeuralNetwork as Network
 #import categorical.Motionsense.MLP_LSTM.NeuralNetwork as Network
-#import categorical.UCIHAR.DeepMLP.NeuralNetwork as Network
+#import categorical.UCIHAR.MLP.NeuralNetwork as Network
 #import categorical.UCIHAR.deepLSTM_.NeuralNetwork as Network
 #import categorical.UCIHAR.vanillaLSTM.NeuralNetwork as Network
-import categorical.SimpleChart.DeepMLP.NeuralNetwork as Network
+#import categorical.SimpleChart.DeepMLP.NeuralNetwork as Network
+import categorical.SimpleChart.deepLSTM_.NeuralNetwork as Network
 
 
 ##############################################################################################
