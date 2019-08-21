@@ -40,7 +40,7 @@ dir_name = os.path.split(os.path.split(os.path.dirname(__file__))[0])[1]
 sub_dir_name = os.path.split(os.path.dirname(__file__))[1]
 model_name = (
     dir_name + "_" + sub_dir_name
-)  # ToDo: Create Dir if this is the right place, else delte line
+)
 
 
 dir_path = os.path.join(dir_name, sub_dir_name)
@@ -121,7 +121,7 @@ class DeepLearning(DeepMLP.NNDefinition):
         Tuple[Union[DataFrame, Series, ndarray, csr_matrix], ...],
         Tuple[Union[DataFrame, Series, ndarray, csr_matrix], ...],
     ]:
-        # Import Boston data
+        # Import Chart data
         loader = Loader()
 
         x_train, y_train, x_validate, y_validate, x_test, y_test = loader.load_data(
