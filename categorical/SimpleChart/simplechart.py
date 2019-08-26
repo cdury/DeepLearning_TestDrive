@@ -80,15 +80,24 @@ class Loader:
         return (rr, period, atr)
 
     def load_data(self, rr, period, atr, look_back_period):
+
+        # ToDo (Refactoring): Start
+        # ToDo (1) : Include TimePeriods and MoonPhase to time  data
         df = self.read_dataframe_from_file(
             os.path.join(self.dataset_path, self.filename), self.instrument
         )
         index = df.index
         columns = df.columns
+        # ToDo (1) : Additional input cols for time and moon phase data
+        # ToDo (4): Additional input cols for indicators
         price_input_cols = ["open", "high", "low", "close"]
+        # ToDo (Refactoring): End
+        # ToDo (5): Additional TimeSeries to data frame
+        # ToDo (Refactoring): Start
         output_scenarios = [
             self.szenario_numbers(name) for name in df.columns if "Long_" in name
         ]
+        # ToDo (Refactoring): End
         if (rr, period, atr) in output_scenarios:
             # classify output (one hot)
             long_name = self.szenario_name(rr, period, atr, long=True)
@@ -123,14 +132,15 @@ class Loader:
             df_prices = np.log10(df_prices / max) + 1.0
             df_input = df_prices
 
-            # remove invalid columns
+            # ToDo (6): Remove rows, dependent on a strategy
+            # remove invalid rows
             nan = df[long_name].isna() | df[short_name].isna()
             df_input = df_input[~(nan|flat)]
             df_one_hot = df_one_hot[~(nan|flat)]
 
             # Transformed data
             df_all = pd.concat([df_input, df_one_hot], axis=1)
-
+            # ToDo (3): Structure to input data (i.e. one block for each time series, one for time data,....)
             # split into datasets of certain length
             split = (0.8, 0.2, 0)
             X_list = []

@@ -31,7 +31,7 @@ from hyperopt import Trials
 from hyperopt import STATUS_OK, STATUS_FAIL
 
 # parameter import
-# ToDo: Import specific neural network specific hype parameters
+# ToDo (Continous): Import specific neural network specific hype parameters
 from Categorical import category_evaluation as graphic_evaluation
 #from categorical.SimpleChart.DeepMLP.hyperParams import (
 from categorical.SimpleChart.DeepLSTM.hyperParams import  (

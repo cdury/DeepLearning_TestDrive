@@ -48,12 +48,14 @@ dir_path = os.path.join(dir_name, sub_dir_name)
 # _helper imports
 
 # Network
-import categorical._model.vanillaLSTM as DeepLearningModel  # ToDo: replace vanillaLSTM wiht the model to be Used
-
+# ToDo (Template): replace vanillaLSTM wiht the model to be Used
+import categorical._model.vanillaLSTM as DeepLearningModel
 # Data
+# ToDo (Template): replace UCIHAR.uci_har with the data loader to be used
 from categorical.UCIHAR.uci_har import (
     Loader,
-)  # ToDo: replace UCIHAR.uci_har with the data loader to be used
+)
+
 
 logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
@@ -78,17 +80,18 @@ class HyperParameters(DeepLearningModel.NNParameters):
         self.label_classes = copy.deepcopy(loader.label_classes)
 
         # Hyperparameter
-        self.label = "..."  # ToDo: Used Label (out of self.labels)
+        # ToDo (Template): Used Label (out of self.labels)
+        self.label = "..."
         self.classes = self.categorizations  # [self.label]
         self.classes = self.label_classes[self.label]
         # # Data
-        # ToDo: Parameter for the data loader (if necessary) (i.e. self.columns_to_use)
+        # ToDo (Template): Parameter for the data loader (if necessary) (i.e. self.columns_to_use)
         # # Training (Hyperparameters)
-        # ToDo: Hyperparameter for network model
+        # ToDo (Template): Hyperparameter for network model
         self.batch_size = 0
         self.epochs = 2
         self.shuffle = False
-        # ToDo: Further Hyperparameter as neccessary
+        # ToDo (Template): Further Hyperparameter as neccessary
         # END Hyperparameter
 
         del loader
@@ -117,13 +120,13 @@ class DeepLearning(DeepLearningModel.NNDefinition):
         loader = Loader()
         x_train, y_train, x_valid, y_valid, x_test, y_test = (
             loader....()
-        )  # ToDo: insert loader
+        )  # ToDo (Template): insert loader
 
         # # Features
-        # ToDo: If not feasibel in Loader
-        # ToDo: Reshaping (dimensions, ...)
-        # ToDo:Tranformation (recurrent pic, stft, ...)
-        # ToDo: Features (mean, std, indicators ,....)
+        # ToDo (Template): If not feasibel in Loader
+        # ToDo (Template): Reshaping (dimensions, ...)
+        # ToDo (Template):Tranformation (recurrent pic, stft, ...)
+        # ToDo (Template): Features (mean, std, indicators ,....)
         # if len(x_train.shape) > 2:
         #     # Flatten Input
         #     x_train = x_train.reshape(x_train.shape[0], -1)
@@ -135,22 +138,24 @@ class DeepLearning(DeepLearningModel.NNDefinition):
         #     # feature_0 = np.mean(x_test, axis=1)
         #     # feature_1 = np.std(x_test, axis=1)
         #     # x_test = np.concatenate((feature_0, feature_1), axis=1)
+        # ToDo (Template): one hot encoding of labels if not already done
         y_train = one_hot(
             y_train
-        )  # ToDo: one hot encoding of labels if not already done
-        y_test = one_hot(y_test)  # ToDo: one hot encoding of labels if not already done
+        )
+        y_test = one_hot(y_test)
         train_data = x_train, y_train
         valid_data = x_valid, y_valid
+        # ToDo (Template): np.ndarray([]), np.ndarray([]) if not test_data
         test_data = (
             x_test,
             y_test,
-        )  # ToDo: np.ndarray([]), np.ndarray([]) if not test_data
+        )
         self.train_data = train_data
         self.test_data = test_data
         self.validation_data = valid_data
         return train_data, valid_data, test_data
 
-    # ToDo: Overload if method in Base_Supervised is not sufficient
+    # ToDo (Template): Overload if method in Base_Supervised is not sufficient
     # def calc_categorical_accuracy(self, model, non_train_data, add_data=None):
     #     final_metrics = {}
     #     return final_metrics
@@ -190,6 +195,6 @@ if __name__ == "__main__":
     # Train _model
     neural_network.setup_and_train_network()
     # Do more stuff
-    # ToDo: if necessary
+    # ToDo (Temoplate): if necessary
     # neural_network.train_network(100)
     logger.debug("Finished")

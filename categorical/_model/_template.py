@@ -73,7 +73,7 @@ class NNParameters(BaseParameters):
         # # data
         self.data_dir = self.data_path
 
-        # ToDo: Hyperparameter for network model and optimizer (non data related)
+        # ToDo (Template): Hyperparameter for network model and optimizer (non data related)
         # Hyperparameter
         # # Data
         self.colum_names = None
@@ -109,7 +109,7 @@ class NNDefinition(BaseNN):
 
     @timing
     def define_model(self, input_shape, output_shape) -> Model:
-        # ToDo: Check if input_shape correspond to model input
+        # ToDo (Template): Check if input_shape correspond to model input
         # # Input1D (i.e. flattened input for dense layer)
         # n_input = input_shape[1]
         # self.parameter.input_shape = n_input
@@ -128,13 +128,13 @@ class NNDefinition(BaseNN):
         # n_input = input_shape[3]
         # self.parameter.input_shape = (dim_pic_x, dim_pic_y, n_input)
 
-        # ToDo: Check if one hot encoded classes are in second or third axis
+        # ToDo (Template): Check if one hot encoded classes are in second or third axis
         # Output (number of classes)
         n_classes = output_shape[1]
         self.parameter.n_classes = n_classes
 
-        # ToDo: Complete model, preferably in Functional API style
-        # ToDo: Don't forget to insert hyperparameters
+        # ToDo (Template): Complete model, preferably in Functional API style
+        # ToDo (Template): Don't forget to insert hyperparameters
         # Start defining the input tensor:
         input_layer = Input(
             (n_timesteps, n_input)
@@ -153,13 +153,13 @@ class NNDefinition(BaseNN):
         # Define the _model's start and end points
         model = Model(inputs=input_layer, outputs=out_layer)
 
-        # ToDo: Define the loss function
+        # ToDo (Template): Define the loss function
         loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits(
             logits=y_pred, labels=y_true
         )
         # loss_fn = "categorical_crossentropy"
 
-        # ToDo: Define the optimizer
+        # ToDo (Template): Define the optimizer
         # optimizer_fn = Adadelta(
         #     lr=self.parameter.learning_rate,
         #     rho=self.parameter.rho,
@@ -207,11 +207,11 @@ class NNDefinition(BaseNN):
 
         # Callbacks
         tensorboard, checkpoint, earlyterm = self.get_callbacks()
-        # ToDo: Fill in wanted callbacks
+        # ToDo (Template): Fill in wanted callbacks
         used_callbacks = [tensorboard]
 
         # Training
-        # ToDo: pay attention to suffle (for time series it should be False, else True)
+        # ToDo (Template): pay attention to suffle (for time series it should be False, else True)
         if self.parameter.batch_size > 0:
             history = model.fit(
                 x_train,

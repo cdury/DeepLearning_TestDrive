@@ -10,7 +10,7 @@ from Categorical import run_and_get_error  # Model to be optimized
 
 hyper_opt_name = (
     "..."
-)  # ToDo: Name of optimization run <NAME_OF_DATASET>_<NAME_OF_NETWORK>
+)  # ToDo (Template): Name of optimization run <NAME_OF_DATASET>_<NAME_OF_NETWORK>
 model_name = Network.model_name
 load_hyper_params_from_pickle = (
     False

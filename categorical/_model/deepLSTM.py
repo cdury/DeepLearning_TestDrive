@@ -172,6 +172,7 @@ class NNDefinition(BaseNN):
         model = Model(inputs=input_layer, outputs=out_layer)
 
         # Define the loss function
+        # ToDO (2): Tamper with loss function (flat doesn't count, or binary...)
         loss_fn = lambda y_true, y_pred: tf.nn.softmax_cross_entropy_with_logits(
             logits=y_pred, labels=y_true
         )

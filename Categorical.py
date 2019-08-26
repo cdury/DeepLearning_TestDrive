@@ -23,7 +23,7 @@ from typing import Any, Dict, Tuple, Optional
 from categorical._helper.graphical import category_evaluation
 
 # _model import
-# ToDo: Import specific neural network
+# ToDo (Continous): Import specific neural network
 # Collection of various networks
 #import categorical.UCIHAR.vanillaMLP.NeuralNetwork as Network
 #import categorical.UCIHAR.vanillaLSTM.NeuralNetwork as Network

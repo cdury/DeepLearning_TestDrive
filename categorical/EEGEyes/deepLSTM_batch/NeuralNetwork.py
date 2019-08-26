@@ -121,6 +121,7 @@ class DeepLearning(deepLSTM.NNDefinition):
         train_data_pred = add_data
         final_metrics = {}
         trainX_forPred, trainY_forPred = train_data_pred
+        # ToDo (2): don't use argmax, maybe arg second max or nor argmax at all
         y_train_pred = model.predict(
             np.repeat(
                 trainX_forPred, self.parameter.batch_size, axis=0
