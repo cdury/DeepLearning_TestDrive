@@ -44,10 +44,10 @@ dir_path = os.path.join(dir_name, sub_dir_name)
 # _helper imports
 
 # Network
-import categorical._model.deepLSTM as deepLSTM
+import categorical._model.DeepLSTM as deepLSTM
 
 # Data
-from categorical.SimpleChart.simplechart import Loader
+from categorical.UCIHAR.uci_har import Loader
 
 logger = logging.getLogger(os.path.splitext(os.path.basename(__file__))[0])
 
@@ -75,22 +75,18 @@ class HyperParameters(deepLSTM.NNParameters):
         self.label = self.labels
         self.classes = self.categorizations  # [self.label]
         # # Data
-        self.rr = 2
-        self.period = 2
-        self.atr = 100
-        self.look_back_period = 202
-
-        # # Modell
-        self.n_first = 4  # Num of hidden features in the first lstm layer
-        self.n_middle = 12  # Num of hidden features in the second lstm layer
-        self.n_add_last = 4  # Num of additional hidden features in the last lstm layer
-
-        self.dropout = 0.2
-        self.number_of_hidden_layers = 2
-
+        self.colums_to_use = [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+        ]  # List of data columns to be used
         # # Training (Hyperparameters)
-        self.learning_rate = 0.025
-        self.lambda_loss_amount = 0.000191
         self.batch_size = 0
         self.epochs = 10
 
@@ -109,8 +105,6 @@ class DeepLearning(deepLSTM.NNDefinition):
     def __init__(self, hyperparameter):
         super().__init__(hyperparameter)
         self.parameter: HyperParameters = hyperparameter
-        logger.debug(f"Random Seed {self.parameter.random_seed}")
-        np.random.seed(self.parameter.random_seed)
 
     @timing
     def load_data(
@@ -120,13 +114,10 @@ class DeepLearning(deepLSTM.NNDefinition):
         Tuple[Union[DataFrame, Series, ndarray, csr_matrix], ...],
         Tuple[Union[DataFrame, Series, ndarray, csr_matrix], ...],
     ]:
-        # Import Chart data
+        # Import UCIHAR data
         loader = Loader()
-        x_train, y_train, x_validate, y_validate, x_test, y_test = loader.load_data(
-            self.parameter.rr,
-            self.parameter.period,
-            self.parameter.atr,
-            self.parameter.look_back_period,
+        x_train, y_train, x_test, y_test = loader.uci_har_dataset_data(
+            self.parameter.colums_to_use
         )
 
         # # Features
@@ -141,12 +132,11 @@ class DeepLearning(deepLSTM.NNDefinition):
         #     # feature_0 = np.mean(x_test, axis=1)
         #     # feature_1 = np.std(x_test, axis=1)
         #     # x_test = np.concatenate((feature_0, feature_1), axis=1)
-        # one hot if necessary
-        # y_train = one_hot(y_train)
-        # y_test = one_hot(y_test)
+        y_train = one_hot(y_train)
+        y_test = one_hot(y_test)
         train_data = x_train, y_train
-        valid_data = x_validate, y_validate
-        test_data = x_test, y_test
+        valid_data = x_test, y_test
+        test_data = np.ndarray([]), np.ndarray([])
         self.train_data = train_data
         self.test_data = test_data
         self.validation_data = valid_data
