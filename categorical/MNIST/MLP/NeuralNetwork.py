@@ -44,7 +44,7 @@ dir_path = os.path.join(dir_name, sub_dir_name)
 # _helper imports
 
 # Network
-import categorical._model.MLP as MLP
+import categorical._model.vanillaMLP as MLP
 
 # Data
 from categorical.MNIST.mnist import Loader

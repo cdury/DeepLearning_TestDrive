@@ -24,19 +24,25 @@ from categorical._helper.graphical import category_evaluation
 
 # _model import
 # ToDo: Import specific neural network
-#import categorical.BostonHousing.DeepMLP.NeuralNetwork as Network
+# Collection of various networks
+#import categorical.UCIHAR.vanillaMLP.NeuralNetwork as Network
+#import categorical.UCIHAR.vanillaLSTM.NeuralNetwork as Network
+
+
 #import categorical.EEGEyes.deepLSTM_batch.NeuralNetwork as Network
-#import categorical.MNIST.DeepMLP.NeuralNetwork as Network
 #import categorical.Motionsense.CNN1d.NeuralNetwork as Network
 #import categorical.Motionsense.CNN1d_LSTM.NeuralNetwork as Network
 #import categorical.Motionsense.CNN2d.NeuralNetwork as Network
 #import categorical.Motionsense.MLP_LSTM.NeuralNetwork as Network
-#import categorical.UCIHAR.MLP.NeuralNetwork as Network
-#import categorical.UCIHAR.deepLSTM_.NeuralNetwork as Network
-#import categorical.UCIHAR.vanillaLSTM.NeuralNetwork as Network
-#import categorical.SimpleChart.DeepMLP.NeuralNetwork as Network
-import categorical.SimpleChart.deepLSTM_.NeuralNetwork as Network
 
+# Deep Multi Layer Perceptron (with Hyperparameters)
+#import categorical.BostonHousing.DeepMLP.NeuralNetwork as Network
+#import categorical.MNIST.DeepMLP.NeuralNetwork as Network
+#import categorical.SimpleChart.DeepMLP.NeuralNetwork as Network
+
+# Deep LSTM Network (with Hyperparameters)
+#import categorical.UCIHAR.DeepLSTM.NeuralNetwork as Network
+import categorical.SimpleChart.DeepLSTM.NeuralNetwork as Network
 
 ##############################################################################################
 # Free to code
